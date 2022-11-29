@@ -1,0 +1,27 @@
+---
+title: "Time Series Analysis of Spotify Data"
+author: Frankie, Anna, Piper, Kate, Ayaan
+format: 
+  html:
+    self-contained: true
+---
+
+```{r setup, echo=FALSE, message=FALSE}
+library(tidyverse)
+library(knitr)
+library(spdep)
+library(broom)
+
+```
+
+```{r}
+
+spotify_data = read_csv("data/spotify_data.csv")
+
+```
+
+```{r}
+
+glimpse(spotify_data)
+
+```
