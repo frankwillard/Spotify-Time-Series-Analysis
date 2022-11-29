@@ -9,8 +9,9 @@ format:
 ```{r setup, echo=FALSE, message=FALSE}
 library(tidyverse)
 library(knitr)
-library(spdep)
 library(broom)
+library(gridExtra)
+library(cowplot)
 
 ```
 
@@ -22,6 +23,75 @@ spotify_data = read_csv("data/spotify_data.csv")
 
 ```{r}
 
-glimpse(spotify_data)
+cols_to_drop <- c("year", "release_date", "id", "name", "artists")
+all_cols <- colnames(spotify_data)
+stat_cols<- all_cols[all_cols %in% cols_to_drop == FALSE]
+
+spotify_mean_yearly <- spotify_data %>% 
+  group_by(year) %>% 
+  summarise_at(stat_cols, list(year_mean = mean))
+
+```
+
+```{r}
+
+colnames(spotify_mean_yearly)
+
+```
+
+```{r}
+
+pop_line_plot <- ggplot(data = spotify_mean_yearly, aes(x = year, y = popularity_year_mean)) +
+  geom_line() + 
+  labs(
+    x = "Year",
+    y = "Song Popularity Mean"
+  )
+
+loud_line_plot <- ggplot(data = spotify_mean_yearly, aes(x = year, y = loudness_year_mean)) +
+  geom_line() + 
+  labs(
+    x = "Year",
+    y = "Song Loudness Mean"
+  )
+
+acoustic_line_plot <- ggplot(data = spotify_mean_yearly, aes(x = year, y = acousticness_year_mean)) +
+  geom_line() + 
+  labs(
+    x = "Year",
+    y = "Song Acousticness Mean"
+  )
+
+energy_line_plot <- ggplot(data = spotify_mean_yearly, aes(x = year, y = energy_year_mean)) +
+  geom_line() + 
+  labs(
+    x = "Year",
+    y = "Song Popularity Mean"
+  )
+
+
+grid.arrange(pop_line_plot, loud_line_plot, acoustic_line_plot, energy_line_plot, nrow = 2)
+
+```
+
+```{r}
+
+plot_for_loop <- function(yearly_data) {
+  
+  cols_to_plot <- colnames(yearly_data)[colnames(yearly_data) %in% "year" == FALSE]
+
+  #line_plots <- c()
+  
+  for (i in 1:length(cols_to_plot)) {
+    current_stat <- cols_to_plot[i]
+    
+    ggplot(data = yearly_data, aes(x = year, y = !! (sym(current_stat)))) +
+      geom_line()
+  }
+  
+}
+
+plot_for_loop(spotify_mean_yearly)
+
 
 ```
