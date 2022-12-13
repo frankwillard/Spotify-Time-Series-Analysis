@@ -7,22 +7,34 @@ format:
 ---
 
 ```{r setup, echo=FALSE, message=FALSE}
+# load packages
 library(tidyverse)
 library(knitr)
 library(broom)
 library(gridExtra)
 library(cowplot)
-
+library(xts)
+library(forecast)
+library(yardstick)
 ```
 
-```{r}
-
+```{r load-data, message=FALSE}
+# load data
 spotify_data = read_csv("data/spotify_data.csv")
-
 ```
 
-```{r}
+## Introduction
 
+Introduction text goes here...
+
+## Exploratory data analysis
+
+High-level overview of EDA methods here...
+
+### Data cleaning
+
+```{r}
+# data cleaning
 cols_to_drop <- c("year", "release_date", "id", "name", "artists")
 all_cols <- colnames(spotify_data)
 stat_cols<- all_cols[all_cols %in% cols_to_drop == FALSE]
@@ -30,17 +42,16 @@ stat_cols<- all_cols[all_cols %in% cols_to_drop == FALSE]
 spotify_mean_yearly <- spotify_data %>% 
   group_by(year) %>% 
   summarise_at(stat_cols, list(year_mean = mean))
-
 ```
 
 ```{r}
-
 colnames(spotify_mean_yearly)
-
 ```
 
-```{r}
+### Data visualization
 
+```{r}
+# data visualization
 pop_line_plot <- ggplot(data = spotify_mean_yearly, aes(x = year, y = popularity_year_mean)) +
   geom_line() + 
   labs(
@@ -66,21 +77,16 @@ energy_line_plot <- ggplot(data = spotify_mean_yearly, aes(x = year, y = energy_
   geom_line() + 
   labs(
     x = "Year",
-    y = "Song Popularity Mean"
+    y = "Song Energy Mean"
   )
 
-
 grid.arrange(pop_line_plot, loud_line_plot, acoustic_line_plot, energy_line_plot, nrow = 2)
-
 ```
 
 ```{r}
-
 plot_for_loop <- function(yearly_data) {
   
   cols_to_plot <- colnames(yearly_data)[colnames(yearly_data) %in% "year" == FALSE]
-
-  #line_plots <- c()
   
   for (i in 1:length(cols_to_plot)) {
     current_stat <- cols_to_plot[i]
@@ -92,6 +98,111 @@ plot_for_loop <- function(yearly_data) {
 }
 
 plot_for_loop(spotify_mean_yearly)
-
-
 ```
+
+## Model fitting
+
+```{r step1}
+# covert dataframe to time series
+spotify_mean_daily <- spotify_data %>% 
+  filter(nchar(release_date) > 7) %>% 
+  group_by(release_date) %>% 
+  summarise_at(stat_cols, list(daily_mean = mean)) %>% 
+  arrange(release_date)
+
+spotify_mean_daily$release_date <- as.Date(spotify_mean_daily$release_date, format =  "%Y-%m-%d")
+spotify_ts <- xts(spotify_mean_daily$popularity_daily_mean, spotify_mean_daily$release_date)
+spotify_ts <- as.ts(spotify_ts)
+
+# forecast ARIMA
+step1 <- forecast::ggtsdisplay(spotify_ts, points = FALSE)
+```
+
+Based on the time series visualization, we will begin by incorporating
+an MA(1) component informed by the PACF echoing pattern. We will also 
+store the root mean squared error value to track our progress while 
+iterating through ARIMA models.
+
+```{r step2, cache=TRUE}
+# MA(1)
+step2 <- forecast::Arima(
+  spotify_ts, order = c(0, 0, 1)
+)
+forecast::ggtsdisplay(step2$residuals, points = FALSE, lag.max = 36)
+
+# store rmse value
+step2_rmse <- yardstick::rmse_vec(
+  spotify_ts %>% unclass(),
+  step2$fitted %>% unclass()
+)
+```
+
+The time series has somewhat improved, but there remains some echoing patterns
+that we can alleviate with differencing. We will apply first-order differencing 
+on top of the MA(1) process with an $ARIMA(0,1,1)$ model. 
+
+```{r step3, cache=TRUE}
+# MA(1)
+# first order differencing
+step3 <- forecast::Arima(
+  spotify_ts, order = c(0, 1, 1)
+)
+forecast::ggtsdisplay(step3$residuals, points = FALSE, lag.max = 36)
+
+# store rmse value
+step3_rmse <- yardstick::rmse_vec(
+  spotify_ts %>% unclass(),
+  step3$fitted %>% unclass()
+ )
+```
+
+The differencing definitely improved the model, bringing the root mean squared
+error from `r round(step2_rmse, 2)` to `r round(step3_rmse, 2)`. The echoing 
+pattern in the PACF has been resolved, but we can move forward by incorporating
+an AR component based on the ACF spike. We will add an AR(2) to the existing model, 
+resulting in an $ARIMA(2,1,1)$ model.
+
+```{r step4, cache=TRUE}
+# MA(1)
+# first order differencing
+# AR(2)
+step4 <- forecast::Arima(
+  spotify_ts, order = c(2, 1, 1)
+)
+forecast::ggtsdisplay(step4$residuals, points = FALSE, lag.max = 36)
+
+# store rmse value
+step4_rmse <- yardstick::rmse_vec(
+  spotify_ts %>% unclass(),
+  step4$fitted %>% unclass()
+)
+```
+
+```{r model-fit}
+# model fit
+model = "Final Model - forecast::Arima (2,1,1) "
+rmse = (spotify_ts-step4$fitted)^2 %>% mean() %>% sqrt() %>% round(3) %>% paste0("   [RMSE: ", . ,"]")
+
+step4 %>%
+  {tibble(
+    spotify_ts = spotify_ts %>% unclass(),
+    model = .$fitted %>% unclass(),
+    time  = time(.$fitted) %>% unclass()
+  )} %>% 
+  tidyr::gather(var, avg_temp, -time) %>%
+  mutate(var = forcats::as_factor(var)) %>%
+  ggplot(aes(x=time, y=avg_temp, color=var)) + 
+    geom_line(alpha=0.75, size=0.8) +
+    labs(title = paste(model, rmse), x = "Time", y = "Average Popularity Score",
+         color = "")
+```
+
+After applying an MA(1) component, first order differencing, and an AR(2) component,
+the model fit appears to be finished! The ACF and PACF do not appear to have a pattern 
+after the final step, and the final model against the given data looks sufficient as well. 
+The model for this data required the following parameters: $ARIMA(2,1,1)$, and the final 
+root mean squared error is `r round(step4_rmse, 2)`.
+
+## Discussion
+
+Discussion goes here...
