@@ -21,11 +21,12 @@ library(yardstick)
 ```{r load-data, message=FALSE}
 # load data
 spotify_data = read_csv("data/spotify_data.csv")
+spotify_data
 ```
 
 ## Introduction
 
-Introduction text goes here...
+In this project, we will be analyzing a dataset that contains audio features of more than 160k Spotify songs that were released between 1921 and 2020. The data is collected from Spotify Web API and our group obtained the dataset from Kaggle. The goal of our project is to perform a time-series analysis of Spotify songs using the ARIMA model that was learned in class. We hope to model the average popularity rating of songs within a given year over time. The dataset contains nineteen different features columns, which includes the song name, artist, release date, popularity rating, and some song characteristics, such as acousticness, danceability, loudness, etc. We will begin by dropping some columns from the dataset as they are unnecessary for our analysis. 
 
 ## Exploratory data analysis
 
@@ -80,7 +81,41 @@ energy_line_plot <- ggplot(data = spotify_mean_yearly, aes(x = year, y = energy_
     y = "Song Energy Mean"
   )
 
+danceability_line_plot <- ggplot(data = spotify_mean_yearly, aes(x = year, danceability_year_mean))+
+  geom_line() + 
+  labs(
+    x = "Year",
+    y = "Song Danceability Mean"
+  )
+
+liveness_line_plot <- ggplot(data = spotify_mean_yearly, aes(x = year, liveness_year_mean))+
+  geom_line() + 
+  labs(
+    x = "Year",
+    y = "Song Liveness Mean"
+  )
+
+duration_line_plot <- ggplot(data = spotify_mean_yearly, aes(x = year, duration_ms_year_mean))+
+  geom_line() + 
+  labs(
+    x = "Year",
+    y = "Song Duration Mean"
+  )
+
+instrumentalness_line_plot <- ggplot(data = spotify_mean_yearly, aes(x = year, instrumentalness_year_mean))+
+  geom_line() + 
+  labs(
+    x = "Year",
+    y = "Song Instrumentalness Mean"
+  )
+
+
+
+
+
 grid.arrange(pop_line_plot, loud_line_plot, acoustic_line_plot, energy_line_plot, nrow = 2)
+
+grid.arrange(liveness_line_plot, danceability_line_plot, duration_line_plot, instrumentalness_line_plot, nrow = 2)
 ```
 
 ```{r}
@@ -117,6 +152,8 @@ spotify_ts <- as.ts(spotify_ts)
 # forecast ARIMA
 step1 <- forecast::ggtsdisplay(spotify_ts, points = FALSE)
 ```
+
+
 
 Based on the time series visualization, we will begin by incorporating
 an MA(1) component informed by the PACF echoing pattern. We will also 
@@ -178,6 +215,13 @@ step4_rmse <- yardstick::rmse_vec(
 )
 ```
 
+```{r auto-model-selection}
+forecast::auto.arima(spotify_ts)
+
+```
+
+After utilizing the auto.arima function, we confirm our findings and determine that this is a ARIMA(2,1,1) model. 
+
 ```{r model-fit}
 # model fit
 model = "Final Model - forecast::Arima (2,1,1) "
@@ -202,6 +246,23 @@ the model fit appears to be finished! The ACF and PACF do not appear to have a p
 after the final step, and the final model against the given data looks sufficient as well. 
 The model for this data required the following parameters: $ARIMA(2,1,1)$, and the final 
 root mean squared error is `r round(step4_rmse, 2)`.
+
+```{r}
+
+
+lm1 = lm(popularity~year, data = spotify_data)
+glm1 = glm(popularity ~ year, data = spotify_data, family = poisson)
+extractAIC(lm1)
+lm2 = lm(popularity~year + poly(2, year), data = spotify_data)
+extractAIC(lm2)
+
+
+```
+
+```{r}
+lm2 = lm(popularity~year + danceability + loudness + energy + instrumentalness, data = spotify_data)
+
+```
 
 ## Discussion
 
