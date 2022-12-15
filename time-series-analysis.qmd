@@ -21,18 +21,17 @@ library(yardstick)
 ```{r load-data, message=FALSE}
 # load data
 spotify_data = read_csv("data/spotify_data.csv")
-spotify_data
 ```
 
 ## Introduction
 
-In this project, we will be analyzing a dataset that contains audio features of more than 160k Spotify songs that were released between 1921 and 2020. The data is collected from Spotify Web API and our group obtained the dataset from Kaggle. The goal of our project is to perform a time-series analysis of Spotify songs using the ARIMA model that was learned in class. We hope to model the average popularity rating of songs within a given year over time. The dataset contains nineteen different features columns, which includes the song name, artist, release date, popularity rating, and some song characteristics, such as acousticness, danceability, loudness, etc. We will begin by dropping some columns from the dataset as they are unnecessary for our analysis. 
+In this project, we will be analyzing a dataset that contains information about audio features of more than 160,000 Spotify songs that were released between 1921 and 2020. The data was originally collected from the Spotify Web API and our group obtained the dataset from Kaggle. The goal of our project is to perform a time-series analysis of Spotify songs using the ARIMA model that was learned in class. We hope to model the average popularity rating of songs within a given year over time. The dataset contains nineteen different features columns, which includes the song name, artist, release date, popularity rating, and some song characteristics, such as acousticness, danceability, loudness, etc. 
 
-## Exploratory data analysis
-
-High-level overview of EDA methods here...
+## Data Preparation and Exploratory data analysis
 
 ### Data cleaning
+
+First, we altered the structure of our data, creating a new dataset (`spotify_mean_yearly`) that contains each year from 1921 to 2010 and the mean values of the following feature variables: acousticness, danceability, duration, energy, explicit, instrumentalness, key, liveness, loudness, mode, popularity, speechiness, tempo, and valence. These variables are defined in the codebook in the README file. 
 
 ```{r}
 # data cleaning
@@ -45,11 +44,9 @@ spotify_mean_yearly <- spotify_data %>%
   summarise_at(stat_cols, list(year_mean = mean))
 ```
 
-```{r}
-colnames(spotify_mean_yearly)
-```
+### EDA: Trends over time
 
-### Data visualization
+In order to get a general sense of the trends in this data, we have plotted the mean values of each of the song feature variables over time. 
 
 ```{r}
 # data visualization
@@ -117,23 +114,9 @@ grid.arrange(pop_line_plot, loud_line_plot, acoustic_line_plot, energy_line_plot
 
 grid.arrange(liveness_line_plot, danceability_line_plot, duration_line_plot, instrumentalness_line_plot, nrow = 2)
 ```
+Of note, mean song popularity increased steeply over time. This probably has to do with the rise of the internet and free music streaming, which happened during the last couple of decades. However, mean song popularity decreased sharply in the last couple of years-- perhaps because not as many people have had the chance to listen to certain songs yet. Mean loudness and energy have generally increased over time, while mean song acousticness has dropped. Mean song liveness and instrumetallness had moderate downward trends. Mean song duration rose over time but has dropped again in the last couple of decades. Song danceability fell from the 1920s to the 1950s but has been on an upward trajectory ever since. 
 
-```{r}
-plot_for_loop <- function(yearly_data) {
-  
-  cols_to_plot <- colnames(yearly_data)[colnames(yearly_data) %in% "year" == FALSE]
-  
-  for (i in 1:length(cols_to_plot)) {
-    current_stat <- cols_to_plot[i]
-    
-    ggplot(data = yearly_data, aes(x = year, y = !! (sym(current_stat)))) +
-      geom_line()
-  }
-  
-}
-
-plot_for_loop(spotify_mean_yearly)
-```
+### Bivariate EDA: Relationships between popularity and song features 
 
 ## Model fitting
 
@@ -152,7 +135,6 @@ spotify_ts <- as.ts(spotify_ts)
 # forecast ARIMA
 step1 <- forecast::ggtsdisplay(spotify_ts, points = FALSE)
 ```
-
 
 
 Based on the time series visualization, we will begin by incorporating
@@ -248,8 +230,6 @@ The model for this data required the following parameters: $ARIMA(2,1,1)$, and t
 root mean squared error is `r round(step4_rmse, 2)`.
 
 ```{r}
-
-
 lm1 = lm(popularity~year, data = spotify_data)
 glm1 = glm(popularity ~ year, data = spotify_data, family = poisson)
 extractAIC(lm1)
@@ -267,3 +247,24 @@ lm2 = lm(popularity~year + danceability + loudness + energy + instrumentalness, 
 ## Discussion
 
 Discussion goes here...
+
+
+
+
+
+```{r}
+plot_for_loop <- function(yearly_data) {
+  
+  cols_to_plot <- colnames(yearly_data)[colnames(yearly_data) %in% "year" == FALSE]
+  
+  for (i in 1:length(cols_to_plot)) {
+    current_stat <- cols_to_plot[i]
+    
+    ggplot(data = yearly_data, aes(x = year, y = !! (sym(current_stat)))) +
+      geom_line()
+  }
+  
+}
+
+plot_for_loop(spotify_mean_yearly)
+```
