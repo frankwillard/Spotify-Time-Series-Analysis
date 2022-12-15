@@ -118,7 +118,9 @@ Of note, mean song popularity increased steeply over time. This probably has to 
 
 ### Bivariate EDA: Relationships between popularity and song features 
 
-## Model fitting
+### Fitting preliminary ARIMA model to Popularity scores
+
+As part of our EDA, we used a step-by-step process to create an ARIMA model of mean popularity scores over time by year from 1921 to 2020. Ultimately, we will attempt to use an ARIMA component to account for left over temporal autocorrelation of the residuals in our linear model of mean song popularity based on mean song features for a given year; this initial ARIMA model may help us to inform that component by showing us the temporal patterns in song popularity over time. 
 
 ```{r step1}
 # covert dataframe to time series
@@ -135,7 +137,6 @@ spotify_ts <- as.ts(spotify_ts)
 # forecast ARIMA
 step1 <- forecast::ggtsdisplay(spotify_ts, points = FALSE)
 ```
-
 
 Based on the time series visualization, we will begin by incorporating
 an MA(1) component informed by the PACF echoing pattern. We will also 
@@ -243,6 +244,8 @@ extractAIC(lm2)
 lm2 = lm(popularity~year + danceability + loudness + energy + instrumentalness, data = spotify_data)
 
 ```
+
+## Model fitting 
 
 ## Discussion
 
