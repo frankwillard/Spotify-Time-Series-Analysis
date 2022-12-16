@@ -117,6 +117,34 @@ Of note, mean song popularity increased steeply over time. This probably has to 
 
 ### Bivariate EDA: Relationships between popularity and song features 
 
+
+```{r}
+#create monthly granularity dataset 
+spotify_mean_monthly <- spotify_data %>% 
+    filter(nchar(release_date) > 7) %>%
+    group_by(month = lubridate::floor_date(as.Date(release_date), 'month')) %>% 
+    summarise_at(stat_cols, list(month_mean = mean))
+```
+
+
+```{r}
+#examples of EDA at each granularity (to get rid of)
+ggplot(data = spotify_mean_daily, aes(x=popularity_daily_mean, y=energy_daily_mean)) +
+  geom_point() + 
+  geom_smooth(color="blue", alpha=0.75, se=FALSE, method="lm") +
+  geom_smooth(color="red", alpha=0.75, se=FALSE)
+
+ggplot(data = spotify_mean_monthly, aes(x=popularity_month_mean, y=energy_month_mean)) +
+  geom_point() + 
+  geom_smooth(color="blue", alpha=0.75, se=FALSE, method="lm") +
+  geom_smooth(color="red", alpha=0.75, se=FALSE)
+
+ggplot(data = spotify_mean_yearly, aes(x=popularity_year_mean, y=energy_year_mean)) +
+  geom_point() + 
+  geom_smooth(color="blue", alpha=0.75, se=FALSE, method="lm") +
+  geom_smooth(color="red", alpha=0.75, se=FALSE)
+```
+
 ### Fitting preliminary ARIMA model to Popularity scores
 
 As part of our EDA, we used a step-by-step process to create an ARIMA model of mean popularity scores over time by year from 1921 to 2020. Ultimately, we will attempt to use an ARIMA component to account for left over temporal autocorrelation of the residuals in our linear model of mean song popularity based on mean song features for a given year; this initial ARIMA model may help us to inform that component by showing us the temporal patterns in song popularity over time. 
