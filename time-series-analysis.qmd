@@ -320,6 +320,10 @@ spotify_decades %>%
 ### Checking cross correlation 
 
 ```{r}
+forecast::ggCcf(spotify_mean_monthly$energy_month_mean, spotify_mean_monthly$popularity_month_mean)
+
+
+
 #monthly cross correlation check for energy on popularity 
 
 energy_lags = spotify_mean_monthly %>%
@@ -409,6 +413,32 @@ energy_lags %>%
   tidyr::gather(lag, energy_month_mean, -popularity_month_mean) %>%
   group_by(lag) %>%
   summarize(corr = cor(energy_month_mean, popularity_month_mean, use="complete.obs"))
+
+
+
+#checking lag correlations without the 0's in popularity 
+spotify_mean_monthly %>%
+  filter(popularity_month_mean > 0) %>%
+  select(month, energy_month_mean, popularity_month_mean) %>%
+  mutate(
+    "lag 0" = lag(energy_month_mean,0),
+    "lag 1" = lag(energy_month_mean,1),
+    "lag 2" = lag(energy_month_mean,2),
+    "lag 3" = lag(energy_month_mean,3),
+    "lag 4" = lag(energy_month_mean,4),
+    "lag 5" = lag(energy_month_mean,5),
+    "lag 6" = lag(energy_month_mean,6),
+    "lag 7" = lag(energy_month_mean,7),
+    "lag 8" = lag(energy_month_mean,8),
+    "lag 9" = lag(energy_month_mean,9),
+    "lag 10" = lag(energy_month_mean,10),
+    "lag 11" = lag(energy_month_mean,11))%>%
+  select(-energy_month_mean, -month) %>%
+  tidyr::gather(lag, energy_month_mean, -popularity_month_mean) %>%
+  group_by(lag) %>%
+  summarize(corr = cor(energy_month_mean, popularity_month_mean, use="complete.obs"))
+
+#it did not help, likely suggestss we don't lag this predictor)
 ```
 
 ```{r}
