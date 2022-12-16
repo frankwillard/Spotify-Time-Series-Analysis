@@ -6,7 +6,7 @@ format:
     self-contained: true
 ---
 
-```{r setup, echo=FALSE, message=FALSE}
+```{r setup, echo=FALSE, message=FALSE, include = FALSE}
 # load packages
 library(tidyverse)
 library(knitr)
@@ -21,27 +21,30 @@ library(fable)
 library(patchwork)
 ```
 
-```{r load-data, message=FALSE}
+```{r load-data, message=FALSE, include = FALSE}
 # load data
 spotify_data = read_csv("data/spotify_data.csv")
 ```
 
 ## Introduction
 
-In this project, we will be analyzing a dataset that contains information about audio features of more than 160,000 Spotify songs that were released between 1921 and 2020. The data was originally collected from the Spotify Web API and our group obtained the dataset from Kaggle. The goal of our project is to perform a time-series analysis of Spotify songs using the ARIMA model that was learned in class. We hope to model the average popularity rating of songs within a given year over time. The dataset contains nineteen different features columns, which includes the song name, artist, release date, popularity rating, and some song characteristics, such as acousticness, danceability, loudness, etc. 
+  Companies are always looking for methods to analyze the popularity of their products, as well as what predicts that popularity over time. The music industry is no different: Spotify has developed a popularity index that ranks songs from 0 to 100 on how popular they are compared to other songs. The score has three components: total streams of a song, how recently a song has been played, and the frequency at which a song is played. This score is immensely useful to Spotify and to music industry professionals on a song-by-song basis, because having a high popularity score increases a song's discoverability to listeners. However, modeling mean values of song popularity over time also has the potential to be useful for Spotify (or similar streaming platforms), because it could help companies understand the factors that play into users' satisfaction with the platform and listening patterns over time, as well as predict future values of popularity that might inform business decisions. We have obtained a Kaggle dataset containing information about audio features of more than 160,000 Spotify songs that were released between 1921 and 2020. While several previous analyses have looked at this data and even examined the relationships between features and popularity, these projects have ignored the implicit potential for temporal autocorrelation in the data. Because the total number of listens for a given song inevitably increases over time, and because frequency and recency of listens depend in large part on media attention and artist activity, the mean song popularity for songs released in one month is likely to be highly related to that of songs released the previous month. Our goal for this project is to create a model of the mean popularity for songs released at given intervals over time using song feature data as predictors and ARIMA errors to account for leftover temporal autocorrelation. 
 
-## Data Preparation and Exploratory data analysis
+## Data Preparation and Exploratory Data Analysis
 
-### Data cleaning
+The original dataset for this project contains nineteen variables, including song name, artist, name, release date, and audio features including acousticness, danceability, loudness and energy. A full codebook of all variables and their definitions is located in the data folder of this repository (`spotify_data_codebook.md`). The original data contained audio features and identification information for 169,909 songs. 
 
-First, we altered the structure of our data, creating a new dataset (`spotify_mean_yearly`) that contains each year from 1921 to 2010 and the mean values of the following feature variables: acousticness, danceability, duration, energy, explicit, instrumentalness, key, liveness, loudness, mode, popularity, speechiness, tempo, and valence. We also created a dataset at monthly granularity. These variables are defined in the codebook in the README file. 
+### Data Preparation
 
-```{r}
+First, we altered the structure of our data, creating a new dataset (`spotify_mean_yearly`) that contains each year from 1921 to 2010 and the mean values of the following feature variables: acousticness, danceability, duration, energy, explicit, instrumentalness, key, liveness, loudness, mode, popularity, speechiness, tempo, and valence. We also created a dataset at monthly granularity. Notably, filtering the release date for only observations that contain monthly data makes the dataset substantially smaller, but we don't have a strong reason to believe that this will produce bias in the data especially given that even some very recent songs with high popularity scores were missing month/ day of release information. 
+
+```{r clean data, message = FALSE, include = FALSE}
 # data cleaning
 cols_to_drop <- c("year", "release_date", "id", "name", "artists")
 all_cols <- colnames(spotify_data)
 stat_cols<- all_cols[all_cols %in% cols_to_drop == FALSE]
 
+#create year
 spotify_mean_yearly <- spotify_data %>% 
   group_by(year) %>% 
   summarise_at(stat_cols, list(year_mean = mean)) %>% 
@@ -208,10 +211,6 @@ Of note, mean song popularity increased steeply over time. This probably has to 
 ```{r}
 # examples of EDA at each granularity (to get rid of)
 # or we could put very small versions of these plots in the EDA to justify monthly granularity
-ggplot(data = spotify_mean_daily, aes(x=popularity_daily_mean, y=energy_daily_mean)) +
-  geom_point() + 
-  geom_smooth(color="blue", alpha=0.75, se=FALSE, method="lm") +
-  geom_smooth(color="red", alpha=0.75, se=FALSE)
 
 ggplot(data = spotify_mean_monthly, aes(x=popularity_month_mean, y=energy_month_mean)) +
   geom_point() + 
@@ -670,8 +669,7 @@ root mean squared error is `r round(step3_rmse, 2)`.
 # report ARIMA model
 m = as_tsibble(spotify_ts) %>% 
   model(ARIMA(value ~ pdq(0, 1, 2)))
-  
-m %>% report()
+
 ```
 
 ## Model fitting 
@@ -683,6 +681,31 @@ model1 <- lm(popularity_month_mean ~ danceability_month_mean + duration_ms_month
 
 summary(model1)
 
+```
+
+```{r}
+AIC(model1)
+
+spotify_mean_monthly$predmodel1 = predict(model1)
+
+plot(spotify_mean_monthly$predmodel1)
+  
+# plot predicted values and actual values
+ggplot(spotify_mean_monthly, aes(y = popularity_month_mean, x = month, color)) +
+                  geom_line() + 
+geom_line(aes(y = predmodel1, color ="pink")) + 
+  labs("Predicted vs. observed, Model 1")
+
+
+```
+
+```{r}
+
+```
+
+
+```{r}
+forecast::ggtsdisplay(model1$residuals, points=FALSE)
 ```
 
 ## Discussion
