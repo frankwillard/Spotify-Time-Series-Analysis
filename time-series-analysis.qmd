@@ -335,7 +335,6 @@ grid.arrange(explicitness_bveda, speechiness_bveda, tempo_bveda, NULL, nrow = 2)
 spotify_decades <- spotify_mean_monthly %>%
   mutate(year = as.numeric(format(month,'%Y'))) %>%
   mutate(decade = year - year %% 10 )
-
 ```
 
 ```{r}
@@ -372,108 +371,12 @@ spotify_decades %>%
   geom_smooth(color='blue', alpha = 0.75,se = FALSE, method = "lm") + 
   geom_smooth(color = "red", alpha = 0.75, se = FALSE) + 
   facet_wrap(~decade)
-
 ```
+
 ### Checking cross correlation 
 
-```{r}
-forecast::ggCcf(spotify_mean_monthly$energy_month_mean, spotify_mean_monthly$popularity_month_mean)
-
-
-
-#monthly cross correlation check for energy on popularity 
-
-energy_lags = spotify_mean_monthly %>%
-  select(month, energy_month_mean, popularity_month_mean) %>%
-  mutate(
-    "lag 0" = lag(energy_month_mean,0),
-    "lag 1" = lag(energy_month_mean,1),
-    "lag 2" = lag(energy_month_mean,2),
-    "lag 3" = lag(energy_month_mean,3),
-    "lag 4" = lag(energy_month_mean,4),
-    "lag 5" = lag(energy_month_mean,5),
-    "lag 6" = lag(energy_month_mean,6),
-    "lag 7" = lag(energy_month_mean,7),
-    "lag 8" = lag(energy_month_mean,8),
-    "lag 9" = lag(energy_month_mean,9),
-    "lag 10" = lag(energy_month_mean,10),
-    "lag 11" = lag(energy_month_mean,11)
-  ) 
-corrs = energy_lags %>%
-  select(-energy_month_mean, -month) %>%
-  tidyr::gather(lag, energy_month_mean, -popularity_month_mean) %>%
-  group_by(lag) %>%
-  summarize(corr = cor(energy_month_mean, popularity_month_mean, use="complete.obs"))
-energy_lags %>%
-  select(-energy_month_mean, -month) %>%
-  tidyr::gather(lag, energy_month_mean, -popularity_month_mean) %>%
-  ggplot(aes(x=energy_month_mean, y=popularity_month_mean)) +
-    geom_point(alpha=0.3) +
-    facet_wrap(~forcats::as_factor(lag)) +
-    #geom_line(stat="smooth", method="loess", color='red',  size=1.2, alpha=0.75) +
-    geom_line(stat="smooth", method="lm", color="blue", size=1.2, alpha=0.75) +
-    geom_text(data=corrs, aes(x=-0.75, y=5, label=round(corr,2)), size=3)
-
-
-#yearly cross correlation check for energy on popularity 
-energy_lags = spotify_mean_yearly %>%
-  select(year, energy_year_mean, popularity_year_mean) %>%
-  mutate(
-    "lag 0" = lag(energy_year_mean,0),
-    "lag 1" = lag(energy_year_mean,1),
-    "lag 2" = lag(energy_year_mean,2),
-    "lag 3" = lag(energy_year_mean,3),
-    "lag 4" = lag(energy_year_mean,4),
-    "lag 5" = lag(energy_year_mean,5),
-    "lag 6" = lag(energy_year_mean,6),
-    "lag 7" = lag(energy_year_mean,7),
-    "lag 8" = lag(energy_year_mean,8),
-    "lag 9" = lag(energy_year_mean,9),
-    "lag 10" = lag(energy_year_mean,10),
-    "lag 11" = lag(energy_year_mean,11)
-  ) 
-corrs = energy_lags %>%
-  select(-energy_year_mean, -year) %>%
-  tidyr::gather(lag, energy_year_mean, -popularity_year_mean) %>%
-  group_by(lag) %>%
-  summarize(corr = cor(energy_year_mean, popularity_year_mean, use="complete.obs"))
-energy_lags %>%
-  select(-energy_year_mean, -year) %>%
-  tidyr::gather(lag, energy_year_mean, -popularity_year_mean) %>%
-  ggplot(aes(x=energy_year_mean, y=popularity_year_mean)) +
-    geom_point(alpha=0.3) +
-    facet_wrap(~forcats::as_factor(lag)) +
-    #geom_line(stat="smooth", method="loess", color='red',  size=1.2, alpha=0.75) +
-    geom_line(stat="smooth", method="lm", color="blue", size=1.2, alpha=0.75) +
-    geom_text(data=corrs, aes(x=-0.75, y=5, label=round(corr,2)), size=3)
-
-
-#printing just correlations of energy on popularity 
-energy_lags = spotify_mean_monthly %>%
-  select(month, energy_month_mean, popularity_month_mean) %>%
-  mutate(
-    "lag 0" = lag(energy_month_mean,0),
-    "lag 1" = lag(energy_month_mean,1),
-    "lag 2" = lag(energy_month_mean,2),
-    "lag 3" = lag(energy_month_mean,3),
-    "lag 4" = lag(energy_month_mean,4),
-    "lag 5" = lag(energy_month_mean,5),
-    "lag 6" = lag(energy_month_mean,6),
-    "lag 7" = lag(energy_month_mean,7),
-    "lag 8" = lag(energy_month_mean,8),
-    "lag 9" = lag(energy_month_mean,9),
-    "lag 10" = lag(energy_month_mean,10),
-    "lag 11" = lag(energy_month_mean,11)
-  ) 
-energy_lags %>%
-  select(-energy_month_mean, -month) %>%
-  tidyr::gather(lag, energy_month_mean, -popularity_month_mean) %>%
-  group_by(lag) %>%
-  summarize(corr = cor(energy_month_mean, popularity_month_mean, use="complete.obs"))
-
-
-
-#checking lag correlations without the 0's in popularity 
+```{r, echo=FALSE, results='hide'}
+#lag correlations of energy on popularity 
 spotify_mean_monthly %>%
   filter(popularity_month_mean > 0) %>%
   select(month, energy_month_mean, popularity_month_mean) %>%
@@ -495,10 +398,6 @@ spotify_mean_monthly %>%
   group_by(lag) %>%
   summarize(corr = cor(energy_month_mean, popularity_month_mean, use="complete.obs"))
 
-#it did not help, likely suggestss we don't lag this predictor)
-```
-
-```{r}
 #lag correlations of danceability on popularity 
 spotify_mean_monthly %>%
   select(month, danceability_month_mean, popularity_month_mean) %>%
@@ -519,9 +418,7 @@ spotify_mean_monthly %>%
   tidyr::gather(lag, danceability_month_mean, -popularity_month_mean) %>%
   group_by(lag) %>%
   summarize(corr = cor(danceability_month_mean, popularity_month_mean, use="complete.obs"))
-```
 
-```{r}
 #lag correlations of loudness on popularity 
 spotify_mean_monthly %>%
   select(month, loudness_month_mean, popularity_month_mean) %>%
@@ -542,9 +439,7 @@ spotify_mean_monthly %>%
   tidyr::gather(lag, loudness_month_mean, -popularity_month_mean) %>%
   group_by(lag) %>%
   summarize(corr = cor(loudness_month_mean, popularity_month_mean, use="complete.obs"))
-```
 
-```{r}
 #lag correlations of acousticness on popularity 
 spotify_mean_monthly %>%
   select(month, acousticness_month_mean, popularity_month_mean) %>%
@@ -565,9 +460,7 @@ spotify_mean_monthly %>%
   tidyr::gather(lag, acousticness_month_mean, -popularity_month_mean) %>%
   group_by(lag) %>%
   summarize(corr = cor(acousticness_month_mean, popularity_month_mean, use="complete.obs"))
-```
 
-```{r}
 #lag correlations of duration on popularity 
 spotify_mean_monthly %>%
   select(month, duration_ms_month_mean, popularity_month_mean) %>%
@@ -588,9 +481,7 @@ spotify_mean_monthly %>%
   tidyr::gather(lag, duration_ms_month_mean, -popularity_month_mean) %>%
   group_by(lag) %>%
   summarize(corr = cor(duration_ms_month_mean, popularity_month_mean, use="complete.obs"))
-```
 
-```{r}
 #lag correlations of liveness on popularity 
 spotify_mean_monthly %>%
   select(month, liveness_month_mean, popularity_month_mean) %>%
@@ -611,9 +502,7 @@ spotify_mean_monthly %>%
   tidyr::gather(lag, liveness_month_mean, -popularity_month_mean) %>%
   group_by(lag) %>%
   summarize(corr = cor(liveness_month_mean, popularity_month_mean, use="complete.obs"))
-```
 
-```{r}
 #lag correlations of instrumentalness on popularity 
 spotify_mean_monthly %>%
   select(month, instrumentalness_month_mean, popularity_month_mean) %>%
@@ -634,9 +523,54 @@ spotify_mean_monthly %>%
   tidyr::gather(lag, instrumentalness_month_mean, -popularity_month_mean) %>%
   group_by(lag) %>%
   summarize(corr = cor(instrumentalness_month_mean, popularity_month_mean, use="complete.obs"))
+
+#lag correlations of speechiness on popularity 
+spotify_mean_monthly %>%
+  select(month, speechiness_month_mean, popularity_month_mean) %>%
+  mutate(
+    "lag 0" = lag(speechiness_month_mean,0),
+    "lag 1" = lag(speechiness_month_mean,1),
+    "lag 2" = lag(speechiness_month_mean,2),
+    "lag 3" = lag(speechiness_month_mean,3),
+    "lag 4" = lag(speechiness_month_mean,4),
+    "lag 5" = lag(speechiness_month_mean,5),
+    "lag 6" = lag(speechiness_month_mean,6),
+    "lag 7" = lag(speechiness_month_mean,7),
+    "lag 8" = lag(speechiness_month_mean,8),
+    "lag 9" = lag(speechiness_month_mean,9),
+    "lag 11"= lag(speechiness_month_mean,11),
+    "lag 10"= lag(speechiness_month_mean,10))  %>%
+  select(-speechiness_month_mean, -month) %>%
+  tidyr::gather(lag, speechiness_month_mean, -popularity_month_mean) %>%
+  group_by(lag) %>%
+  summarize(corr = cor(speechiness_month_mean, popularity_month_mean, use="complete.obs"))
 ```
 
+```{r}
+#lag correlations of tempo on popularity 
+spotify_mean_monthly %>%
+  select(month, tempo_month_mean, popularity_month_mean) %>%
+  mutate(
+    "lag 0" = lag(tempo_month_mean,0),
+    "lag 1" = lag(tempo_month_mean,1),
+    "lag 2" = lag(tempo_month_mean,2),
+    "lag 3" = lag(tempo_month_mean,3),
+    "lag 4" = lag(tempo_month_mean,4),
+    "lag 5" = lag(tempo_month_mean,5),
+    "lag 6" = lag(tempo_month_mean,6),
+    "lag 7" = lag(tempo_month_mean,7),
+    "lag 8" = lag(tempo_month_mean,8),
+    "lag 9" = lag(tempo_month_mean,9),
+    "lag 11"= lag(tempo_month_mean,11),
+    "lag 10"= lag(tempo_month_mean,10))  %>%
+  select(-tempo_month_mean, -month) %>%
+  tidyr::gather(lag, tempo_month_mean, -popularity_month_mean) %>%
+  group_by(lag) %>%
+  summarize(corr = cor(tempo_month_mean, popularity_month_mean, use="complete.obs"))
 
+#plot lag CCF
+forecast::ggCcf(spotify_mean_monthly$tempo_month_mean, spotify_mean_monthly$popularity_month_mean)
+```
 
 ### Fitting preliminary ARIMA model to Popularity scores
 
@@ -727,7 +661,6 @@ root mean squared error is `r round(step3_rmse, 2)`.
 # report ARIMA model
 m = as_tsibble(spotify_ts) %>% 
   model(ARIMA(value ~ pdq(0, 1, 2)))
-
 ```
 
 ## Model fitting 
@@ -735,55 +668,93 @@ m = as_tsibble(spotify_ts) %>%
 Our goal in creating this model is to predict monthly mean song popularity based on monthly mean song features. From our EDA, we can see that _____ had associations with monthly mean song popularity. We will start by fitting a multiple linear regression model with mean monthly popularity as the outcome, the features identified in EDA as predictors, and  no temporal component. 
 
 ```{r}
-model1 <- lm(popularity_month_mean ~ danceability_month_mean + duration_ms_month_mean + energy_month_mean + explicit_month_mean +  instrumentalness_month_mean + key_month_mean + liveness_month_mean + loudness_month_mean + mode_month_mean +  speechiness_month_mean + tempo_month_mean + valence_month_mean, data = spotify_mean_monthly) 
+# fit model
+model1 <- lm(popularity_month_mean ~ danceability_month_mean + energy_month_mean + explicit_month_mean +
+               instrumentalness_month_mean + loudness_month_mean + tempo_month_mean, data = spotify_mean_monthly) 
 
+# output model
 summary(model1)
 
+# store RMSE and AIC
+model1_rmse <- yardstick::rmse_vec(
+  spotify_mean_monthly$popularity_month_mean,
+  model1$fitted
+ )
+model1_aic <- AIC(model1)
 ```
 
-```{r}
-AIC(model1)
-
-spotify_mean_monthly$predmodel1 = predict(model1)
-
-plot(spotify_mean_monthly$predmodel1)
-  
+```{r, echo=FALSE}
 # plot predicted values and actual values
+spotify_mean_monthly$predmodel1 = predict(model1)
 ggplot(spotify_mean_monthly, aes(y = popularity_month_mean, x = month, color)) +
                   geom_line() + 
-geom_line(aes(y = predmodel1, color ="pink")) + 
-  labs("Predicted vs. observed, Model 1")
-
-
+  geom_line(aes(y = predmodel1, color ="pink")) + 
+  labs("Predicted vs. Observed, Model 1")
 ```
 
 ```{r}
+# fit model
+model2 = lm(popularity_month_mean ~ danceability_month_mean + energy_month_mean + explicit_month_mean + 
+              instrumentalness_month_mean + loudness_month_mean + tempo_month_mean + 
+              lag(tempo_month_mean, 10),
+            data = spotify_mean_monthly)
 
+# output model
+summary(model2)
+
+# store RMSE and AIC
+model2_rmse <- model2 %>% 
+  broom::augment(newdata = spotify_mean_monthly) %>% 
+  mutate(rmse = yardstick::rmse_vec(popularity_month_mean, .fitted)) %>% 
+  select(rmse) %>% 
+  first() %>% 
+  pull()
+
+model2_aic <- AIC(model2)
 ```
 
+```{r}
+# visualize residuals
+forecast::ggtsdisplay(model2$residuals, points=FALSE)
+
+# visualize lag on residuals
+forecast::ggCcf(spotify_mean_monthly$popularity_month_mean, model2$residuals)
+```
 
 ```{r}
-forecast::ggtsdisplay(model1$residuals, points=FALSE)
+# fit model
+model3 = lm(popularity_month_mean ~ danceability_month_mean + energy_month_mean + explicit_month_mean + 
+              instrumentalness_month_mean + loudness_month_mean + tempo_month_mean + 
+              lag(tempo_month_mean, 10) + lag(popularity_month_mean, 10),
+            data = spotify_mean_monthly)
+
+# output model
+summary(model3)
+
+# store RMSE and AIC
+model3_rmse <- model3 %>% 
+  broom::augment(newdata = spotify_mean_monthly) %>% 
+  mutate(rmse = yardstick::rmse_vec(popularity_month_mean, .fitted)) %>% 
+  select(rmse) %>% 
+  first() %>% 
+  pull()
+
+model3_aic <- AIC(model3)
+```
+
+```{r, echo=FALSE}
+# plot predicted values and actual values
+model3 %>% 
+  broom::augment(newdata = spotify_mean_monthly) %>% 
+  ggplot(aes(y = popularity_month_mean, x = month, color)) +
+  geom_line() +
+  geom_line(aes(y = .fitted, color = "pink")) + 
+  labs("Predicted vs. Observed, Model 3")
+
+# visualize residuals
+forecast::ggtsdisplay(model2$residuals, points=FALSE)
 ```
 
 ## Discussion
 
 Discussion goes here...
-
-
-```{r}
-plot_for_loop <- function(yearly_data) {
-  
-  cols_to_plot <- colnames(yearly_data)[colnames(yearly_data) %in% "year" == FALSE]
-  
-  for (i in 1:length(cols_to_plot)) {
-    current_stat <- cols_to_plot[i]
-    
-    ggplot(data = yearly_data, aes(x = year, y = !! (sym(current_stat)))) +
-      geom_line()
-  }
-  
-}
-
-plot_for_loop(spotify_mean_yearly)
-```
