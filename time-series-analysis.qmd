@@ -222,6 +222,81 @@ ggplot(data = spotify_mean_yearly, aes(x=popularity_year_mean, y=energy_year_mea
   geom_smooth(color="red", alpha=0.75, se=FALSE)
 ```
 
+```{r}
+spotify_mean_monthly %>%
+  ggplot(aes(x=danceability_month_mean, y = popularity_month_mean)) + 
+  geom_point() + 
+  geom_smooth(color='blue', alpha = 0.75,se = FALSE, method = "lm") + 
+  geom_smooth(color = "red", alpha = 0.25, se = FALSE) 
+
+spotify_mean_monthly %>%
+  ggplot(aes(x=loudness_month_mean, y = popularity_month_mean)) + 
+  geom_point() + 
+  geom_smooth(color='blue', alpha = 0.75,se = FALSE, method = "lm") + 
+  geom_smooth(color = "red", alpha = 0.75, se = FALSE) 
+
+spotify_mean_monthly %>%
+  ggplot(aes(x=energy_month_mean, y = popularity_month_mean)) + 
+  geom_point() + 
+  geom_smooth(color='blue', alpha = 0.75,se = FALSE, method = "lm") + 
+  geom_smooth(color = "red", alpha = 0.75, se = FALSE) 
+spotify_mean_monthly %>%
+  ggplot(aes(x=instrumentalness_month_mean, y = popularity_month_mean)) + 
+  geom_point() + 
+  geom_smooth(color='blue', alpha = 0.75,se = FALSE, method = "lm") + 
+  geom_smooth(color = "red", alpha = 0.75, se = FALSE) 
+
+spotify_mean_monthly %>%
+  ggplot(aes(x=acousticness_month_mean, y = popularity_month_mean)) + 
+  geom_point() + 
+  geom_smooth(color='blue', alpha = 0.75,se = FALSE, method = "lm") + 
+  geom_smooth(color = "red", alpha = 0.75, se = FALSE) 
+
+```
+
+```{r}
+spotify_decades <- spotify_mean_monthly %>%
+  mutate(year = as.numeric(format(month,'%Y'))) %>%
+  mutate(decade = year - year %% 10 )
+
+```
+
+```{r}
+spotify_decades %>%
+  ggplot(aes(x=danceability_month_mean, y = popularity_month_mean)) + 
+  geom_point() + 
+  geom_smooth(color='blue', alpha = 0.75,se = FALSE, method = "lm") + 
+  geom_smooth(color = "red", alpha = 0.25, se = FALSE) + 
+  facet_wrap(~decade)
+
+spotify_decades %>%
+  ggplot(aes(x=loudness_month_mean, y = popularity_month_mean)) + 
+  geom_point() + 
+  geom_smooth(color='blue', alpha = 0.75,se = FALSE, method = "lm") + 
+  geom_smooth(color = "red", alpha = 0.75, se = FALSE) + 
+  facet_wrap(~decade)
+
+spotify_decades %>%
+  ggplot(aes(x=energy_month_mean, y = popularity_month_mean)) + 
+  geom_point() + 
+  geom_smooth(color='blue', alpha = 0.75,se = FALSE, method = "lm") + 
+  geom_smooth(color = "red", alpha = 0.75, se = FALSE) + 
+  facet_wrap(~decade)
+spotify_decades %>%
+  ggplot(aes(x=instrumentalness_month_mean, y = popularity_month_mean)) + 
+  geom_point() + 
+  geom_smooth(color='blue', alpha = 0.75,se = FALSE, method = "lm") + 
+  geom_smooth(color = "red", alpha = 0.75, se = FALSE) + 
+  facet_wrap(~decade)
+
+spotify_decades %>%
+  ggplot(aes(x=acousticness_month_mean, y = popularity_month_mean)) + 
+  geom_point() + 
+  geom_smooth(color='blue', alpha = 0.75,se = FALSE, method = "lm") + 
+  geom_smooth(color = "red", alpha = 0.75, se = FALSE) + 
+  facet_wrap(~decade)
+
+```
 ### Fitting preliminary ARIMA model to Popularity scores
 
 As part of our EDA, we used a step-by-step process to create an ARIMA model of mean popularity scores over time by year from 1921 to 2020. Ultimately, we will attempt to use an ARIMA component to account for left over temporal autocorrelation of the residuals in our linear model of mean song popularity based on mean song features for a given year; this initial ARIMA model may help us to inform that component by showing us the temporal patterns in song popularity over time. 
