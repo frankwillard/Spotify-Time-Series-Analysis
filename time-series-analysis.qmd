@@ -33,7 +33,7 @@ In this project, we will be analyzing a dataset that contains information about 
 
 ### Data cleaning
 
-First, we altered the structure of our data, creating a new dataset (`spotify_mean_yearly`) that contains each year from 1921 to 2010 and the mean values of the following feature variables: acousticness, danceability, duration, energy, explicit, instrumentalness, key, liveness, loudness, mode, popularity, speechiness, tempo, and valence. These variables are defined in the codebook in the README file. 
+First, we altered the structure of our data, creating a new dataset (`spotify_mean_yearly`) that contains each year from 1921 to 2010 and the mean values of the following feature variables: acousticness, danceability, duration, energy, explicit, instrumentalness, key, liveness, loudness, mode, popularity, speechiness, tempo, and valence. We also created a dataset at monthly granularity. These variables are defined in the codebook in the README file. 
 
 ```{r}
 # data cleaning
@@ -44,68 +44,153 @@ stat_cols<- all_cols[all_cols %in% cols_to_drop == FALSE]
 spotify_mean_yearly <- spotify_data %>% 
   group_by(year) %>% 
   summarise_at(stat_cols, list(year_mean = mean))
+
+#create monthly granularity dataset 
+spotify_mean_monthly <- spotify_data %>% 
+    filter(nchar(release_date) > 7) %>%
+    group_by(month = lubridate::floor_date(as.Date(release_date), 'month')) %>% 
+    summarise_at(stat_cols, list(month_mean = mean))
 ```
 
 ### EDA: Trends over time
 
-In order to get a general sense of the trends in this data, we have plotted the mean values of each of the song feature variables over time. 
+In order to get a general sense of the trends in this data, we have plotted the mean values of each of the song feature variables over time.
 
 ```{r}
-# data visualization
+# data visualization for yearly trends
 pop_line_plot <- ggplot(data = spotify_mean_yearly, aes(x = year, y = popularity_year_mean)) +
   geom_line() + 
   labs(
     x = "Year",
-    y = "Song Popularity Mean"
+    y = "Song Popularity Mean",
+    title = "Yearly time series of Popularity"
   )
 
 loud_line_plot <- ggplot(data = spotify_mean_yearly, aes(x = year, y = loudness_year_mean)) +
   geom_line() + 
   labs(
     x = "Year",
-    y = "Song Loudness Mean"
+    y = "Song Loudness Mean",
+    title = "Yearly time series of Loudness"
   )
 
 acoustic_line_plot <- ggplot(data = spotify_mean_yearly, aes(x = year, y = acousticness_year_mean)) +
   geom_line() + 
   labs(
     x = "Year",
-    y = "Song Acousticness Mean"
+    y = "Song Acousticness Mean",
+    title = "Yearly time series of Acoustic"
   )
 
 energy_line_plot <- ggplot(data = spotify_mean_yearly, aes(x = year, y = energy_year_mean)) +
   geom_line() + 
   labs(
     x = "Year",
-    y = "Song Energy Mean"
+    y = "Song Energy Mean",
+    title = "Yearly time series of Energy"
   )
 
 danceability_line_plot <- ggplot(data = spotify_mean_yearly, aes(x = year, danceability_year_mean))+
   geom_line() + 
   labs(
     x = "Year",
-    y = "Song Danceability Mean"
+    y = "Song Danceability Mean",
+    title = "Yearly time series of Danceability"
   )
 
 liveness_line_plot <- ggplot(data = spotify_mean_yearly, aes(x = year, liveness_year_mean))+
   geom_line() + 
   labs(
     x = "Year",
-    y = "Song Liveness Mean"
+    y = "Song Liveness Mean",
+    title = "Yearly time series of Liveness"
   )
 
 duration_line_plot <- ggplot(data = spotify_mean_yearly, aes(x = year, duration_ms_year_mean))+
   geom_line() + 
   labs(
     x = "Year",
-    y = "Song Duration Mean"
+    y = "Song Duration Mean",
+    title = "Yearly time series of Duration"
   )
 
 instrumentalness_line_plot <- ggplot(data = spotify_mean_yearly, aes(x = year, instrumentalness_year_mean))+
   geom_line() + 
   labs(
     x = "Year",
-    y = "Song Instrumentalness Mean"
+    y = "Song Instrumentalness Mean",
+    title = "Yearly time series of Instrumentalness"
+  )
+
+grid.arrange(pop_line_plot, loud_line_plot, acoustic_line_plot, energy_line_plot, nrow = 2)
+
+grid.arrange(liveness_line_plot, danceability_line_plot, duration_line_plot, instrumentalness_line_plot, nrow = 2)
+```
+
+```{r}
+# data visualization for montly
+pop_line_plot <- ggplot(data = spotify_mean_monthly, aes(x = month, y = popularity_month_mean)) +
+  geom_line() + 
+  labs(
+    x = "Year",
+    y = "Song Popularity Mean",
+    title = "Monthly time series of Popularity"
+  )
+
+loud_line_plot <- ggplot(data = spotify_mean_monthly, aes(x = month, y = loudness_month_mean)) +
+  geom_line() + 
+  labs(
+    x = "Year",
+    y = "Song Loudness Mean",
+    title = "Monthly time series of Loudness"
+  )
+
+acoustic_line_plot <- ggplot(data = spotify_mean_monthly, aes(x = month, y = acousticness_month_mean)) +
+  geom_line() + 
+  labs(
+    x = "Year",
+    y = "Song Acousticness Mean",
+    title = "Monthly time series of Acoustic"
+  )
+
+energy_line_plot <- ggplot(data = spotify_mean_monthly, aes(x = month, y = energy_month_mean)) +
+  geom_line() + 
+  labs(
+    x = "Year",
+    y = "Song Energy Mean",
+    title = "Monthly time series of Energy"
+  )
+
+danceability_line_plot <- ggplot(data = spotify_mean_monthly, aes(x = month, danceability_month_mean))+
+  geom_line() + 
+  labs(
+    x = "Year",
+    y = "Song Danceability Mean",
+    title = "Monthly time series of Danceability"
+  )
+
+liveness_line_plot <- ggplot(data = spotify_mean_monthly, aes(x = month, liveness_month_mean))+
+  geom_line() + 
+  labs(
+    x = "Year",
+    y = "Song Liveness Mean",
+    title = "Monthly time series of Liveness"
+  )
+
+duration_line_plot <- ggplot(data = spotify_mean_monthly, aes(x = month, duration_ms_month_mean))+
+  geom_line() + 
+  labs(
+    x = "Year",
+    y = "Song Duration Mean",
+    title = "Monthly time series of Duration"
+  )
+
+instrumentalness_line_plot <- ggplot(data = spotify_mean_monthly, aes(x = month, instrumentalness_month_mean))+
+  geom_line() + 
+  labs(
+    x = "Year",
+    y = "Song Instrumentalness Mean",
+    title = "Monthly time series of Instrumentalness"
   )
 
 grid.arrange(pop_line_plot, loud_line_plot, acoustic_line_plot, energy_line_plot, nrow = 2)
@@ -116,16 +201,6 @@ grid.arrange(liveness_line_plot, danceability_line_plot, duration_line_plot, ins
 Of note, mean song popularity increased steeply over time. This probably has to do with the rise of the internet and free music streaming, which happened during the last couple of decades. However, mean song popularity decreased sharply in the last couple of years-- perhaps because not as many people have had the chance to listen to certain songs yet. Mean loudness and energy have generally increased over time, while mean song acousticness has dropped. Mean song liveness and instrumetallness had moderate downward trends. Mean song duration rose over time but has dropped again in the last couple of decades. Song danceability fell from the 1920s to the 1950s but has been on an upward trajectory ever since. 
 
 ### Bivariate EDA: Relationships between popularity and song features 
-
-
-```{r}
-#create monthly granularity dataset 
-spotify_mean_monthly <- spotify_data %>% 
-    filter(nchar(release_date) > 7) %>%
-    group_by(month = lubridate::floor_date(as.Date(release_date), 'month')) %>% 
-    summarise_at(stat_cols, list(month_mean = mean))
-```
-
 
 ```{r}
 #examples of EDA at each granularity (to get rid of)
