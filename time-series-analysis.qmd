@@ -777,6 +777,14 @@ summary(model4)
 
 # store AIC
 model4_aic <- AIC(model4)
+
+# visualize predicted versus actual 
+spotify_mean_monthly %>%
+  mutate(fitted = model4$fitted) %>% 
+  ggplot(aes(y = popularity_month_mean, x = month, color)) +
+  geom_line() +
+  geom_line(aes(y = fitted, color = "pink")) + 
+  labs("Predicted vs. Observed, Model 4")
 ```
 
 ## Discussion
