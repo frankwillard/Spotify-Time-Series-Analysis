@@ -755,6 +755,30 @@ model3 %>%
 forecast::ggtsdisplay(model2$residuals, points=FALSE)
 ```
 
+```{r}
+# Create matrix of predictors
+xreg <- cbind(energy_month_mean=spotify_mean_monthly$energy_month_mean, 
+              explicit_month_mean=spotify_mean_monthly$explicit_month_mean,
+              danceability_month_mean=spotify_mean_monthly$danceability_month_mean, 
+              instrumentalness_month_mean=spotify_mean_monthly$instrumentalness_month_mean,
+              loudness_month_mean=spotify_mean_monthly$loudness_month_mean, 
+              tempo_month_mean=spotify_mean_monthly$tempo_month_mean
+              )
+
+# Remove intercept and isolate response variable
+xreg <- xreg[,-1]
+popularity <- ts(spotify_mean_monthly$popularity_month_mean)
+
+# fit model
+model4 <- auto.arima(popularity, xreg=xreg)
+
+# output model
+summary(model4)
+
+# store AIC
+model4_aic <- AIC(model4)
+```
+
 ## Discussion
 
 Discussion goes here...
