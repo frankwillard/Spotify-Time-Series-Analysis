@@ -665,7 +665,7 @@ m = as_tsibble(spotify_ts) %>%
 
 ## Model fitting 
 
-Our goal in creating this model is to predict monthly mean song popularity based on monthly mean song features. From our EDA, we can see that _____ had associations with monthly mean song popularity. We will start by fitting a multiple linear regression model with mean monthly popularity as the outcome, the features identified in EDA as predictors, and  no temporal component. 
+Our goal in creating this model is to predict monthly mean song popularity based on monthly mean song features. From our EDA, we can see that danceability, energy, explicitness, instrumentalness, loudness, and tempo had linear associations with monthly mean song popularity. We will start by fitting a multiple linear regression model with mean monthly popularity as the outcome, the features identified in EDA as predictors, and no temporal component. 
 
 ```{r}
 # fit model
@@ -692,6 +692,8 @@ ggplot(spotify_mean_monthly, aes(y = popularity_month_mean, x = month, color)) +
   labs("Predicted vs. Observed, Model 1")
 ```
 
+The model performed decently, with an root mean squared error or `r round(model1_rmse, 3)` and an AIC of `r round(model1_aic, 3)`. We want to include some temporal component, so we will move forward by adding a temporal component to our existing model with a cross correlation function lag term on the tempo predictor.
+
 ```{r}
 # fit model
 model2 = lm(popularity_month_mean ~ danceability_month_mean + energy_month_mean + explicit_month_mean + 
@@ -712,6 +714,8 @@ model2_rmse <- model2 %>%
 
 model2_aic <- AIC(model2)
 ```
+
+The new model performed better, with an root mean squared error or `r round(model2_rmse, 3)` and an AIC of `r round(model2_aic, 3)`. The temporal component improved the model, so we will move forward by visualizing the residuals and considering a cross correlation function lag term on the response.
 
 ```{r}
 # visualize residuals
@@ -750,10 +754,9 @@ model3 %>%
   geom_line() +
   geom_line(aes(y = .fitted, color = "pink")) + 
   labs("Predicted vs. Observed, Model 3")
-
-# visualize residuals
-forecast::ggtsdisplay(model2$residuals, points=FALSE)
 ```
+
+The third model performed even better than the prior two, with an root mean squared error or `r round(model3_rmse, 3)` and an AIC of `r round(model3_aic, 3)`. The temporal components improved the model, but we can include an ARIMA component on the errors instead of the cross correlation terms we added in the second and third models.
 
 ```{r}
 # Create matrix of predictors
@@ -786,6 +789,8 @@ spotify_mean_monthly %>%
   geom_line(aes(y = fitted, color = "pink")) + 
   labs("Predicted vs. Observed, Model 4")
 ```
+
+The ARIMA model included alongside the multiple linear regression performed the best in terms of AIC, yielding an AIC of `r round(model4_aic, 3)`.
 
 ## Discussion
 
