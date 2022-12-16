@@ -43,13 +43,15 @@ stat_cols<- all_cols[all_cols %in% cols_to_drop == FALSE]
 
 spotify_mean_yearly <- spotify_data %>% 
   group_by(year) %>% 
-  summarise_at(stat_cols, list(year_mean = mean))
+  summarise_at(stat_cols, list(year_mean = mean)) %>% 
+  filter(year < 2020)
 
 #create monthly granularity dataset 
 spotify_mean_monthly <- spotify_data %>% 
-    filter(nchar(release_date) > 7) %>%
-    group_by(month = lubridate::floor_date(as.Date(release_date), 'month')) %>% 
-    summarise_at(stat_cols, list(month_mean = mean))
+  filter(nchar(release_date) > 7) %>%
+  group_by(month = lubridate::floor_date(as.Date(release_date), 'month')) %>% 
+  summarise_at(stat_cols, list(month_mean = mean)) %>% 
+  filter(month < '2020-01-01')
 ```
 
 ### EDA: Trends over time
@@ -128,7 +130,7 @@ grid.arrange(liveness_line_plot, danceability_line_plot, duration_line_plot, ins
 ```
 
 ```{r}
-# data visualization for montly
+# data visualization for monthly
 pop_line_plot <- ggplot(data = spotify_mean_monthly, aes(x = month, y = popularity_month_mean)) +
   geom_line() + 
   labs(
@@ -198,12 +200,12 @@ grid.arrange(pop_line_plot, loud_line_plot, acoustic_line_plot, energy_line_plot
 grid.arrange(liveness_line_plot, danceability_line_plot, duration_line_plot, instrumentalness_line_plot, nrow = 2)
 ```
 
-Of note, mean song popularity increased steeply over time. This probably has to do with the rise of the internet and free music streaming, which happened during the last couple of decades. However, mean song popularity decreased sharply in the last couple of years-- perhaps because not as many people have had the chance to listen to certain songs yet. Mean loudness and energy have generally increased over time, while mean song acousticness has dropped. Mean song liveness and instrumetallness had moderate downward trends. Mean song duration rose over time but has dropped again in the last couple of decades. Song danceability fell from the 1920s to the 1950s but has been on an upward trajectory ever since. 
+Of note, mean song popularity increased steeply over time. This probably has to do with the rise of the internet and free music streaming, which happened during the last couple of decades. However, mean song popularity decreased sharply in the last couple of years-- perhaps because not as many people have had the chance to listen to certain songs yet. Mean loudness and energy have generally increased over time, while mean song acousticness has dropped. Mean song liveness and instrumetalness had moderate downward trends. Mean song duration rose over time but has dropped again in the last couple of decades. Song danceability fell from the 1920s to the 1950s but has been on an upward trajectory ever since. 
 
 ### Bivariate EDA: Relationships between popularity and song features 
 
 ```{r}
-#examples of EDA at each granularity (to get rid of)
+# examples of EDA at each granularity (to get rid of)
 ggplot(data = spotify_mean_daily, aes(x=popularity_daily_mean, y=energy_daily_mean)) +
   geom_point() + 
   geom_smooth(color="blue", alpha=0.75, se=FALSE, method="lm") +
@@ -226,9 +228,7 @@ As part of our EDA, we used a step-by-step process to create an ARIMA model of m
 
 ```{r step1}
 # covert dataframe to time series
-spotify_mean_yearly$year <- as.Date(as.character(spotify_mean_yearly$year), format = "%Y")
-
-spotify_ts <- xts(spotify_mean_yearly$popularity_year_mean, spotify_mean_yearly$year)
+spotify_ts <- xts(spotify_mean_monthly$popularity_month_mean, spotify_mean_monthly$month)
 spotify_ts <- as.ts(spotify_ts)
 
 # forecast ARIMA
@@ -255,14 +255,14 @@ step2_rmse <- yardstick::rmse_vec(
 ```
 
 The time series has somewhat improved, but there remains some patterns
-that we can alleviate with an AR process. We will apply a AR(1) process
-on top of the first-order differencing with an $ARIMA(1,1,0)$ model. 
+that we can alleviate with an AR process. We will apply a MA(2) process
+on top of the first-order differencing with an $ARIMA(0,1,2)$ model. 
 
 ```{r step3, cache=TRUE}
 # first order differencing
-# AR(1)
+# MA(2)
 step3 <- forecast::Arima(
-  spotify_ts, order = c(1, 1, 0)
+  spotify_ts, order = c(0, 1, 2)
 )
 forecast::ggtsdisplay(step3$residuals, points = FALSE, lag.max = 36)
 
@@ -275,7 +275,7 @@ step3_rmse <- yardstick::rmse_vec(
 
 The AR component somewhat improved the model, bringing the root mean squared
 error from `r round(step2_rmse, 2)` to `r round(step3_rmse, 2)`. We can confirm
-our findings using the `auto.arima` function.
+our findings using the `auto.arima` function:
 
 ```{r auto-model-selection}
 # auto arima on time series
@@ -284,7 +284,7 @@ forecast::auto.arima(spotify_ts)
 
 ```{r model-fit}
 # model fit
-model = "Final Model - forecast::Arima (1,1,0) "
+model = "Final Model - forecast::Arima (0,1,2) "
 rmse = (spotify_ts-step3$fitted)^2 %>% mean() %>% sqrt() %>% round(3) %>% paste0("   [RMSE: ", . ,"]")
 
 step3 %>%
@@ -301,17 +301,18 @@ step3 %>%
          color = "")
 ```
 
-After applying first order differencing and an AR(1) component,
+After applying first order differencing and an MA(2) component,
 the model fit appears to be finished! The ACF and PACF do not appear to have a pattern 
 after the final step, and the final model against the given data looks sufficient as well. 
-The model for this data required the following parameters: $ARIMA(1,1,0)$, and the final 
+The model for this data required the following parameters: $ARIMA(0,1,2)$, and the final 
 root mean squared error is `r round(step3_rmse, 2)`.
 
 ```{r arima-model-output}
 # report ARIMA model
-as_tsibble(spotify_ts) %>% 
-  model(ARIMA(value ~ pdq(1, 1, 0))) %>% 
-  report()
+m = as_tsibble(spotify_ts) %>% 
+  model(ARIMA(value ~ pdq(0, 1, 2)))
+  
+m %>% report()
 ```
 
 ## Model fitting 
