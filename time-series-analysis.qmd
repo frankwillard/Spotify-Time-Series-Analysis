@@ -16,6 +16,8 @@ library(cowplot)
 library(xts)
 library(forecast)
 library(yardstick)
+library(lubridate)
+library(fable)
 ```
 
 ```{r load-data, message=FALSE}
@@ -106,14 +108,11 @@ instrumentalness_line_plot <- ggplot(data = spotify_mean_yearly, aes(x = year, i
     y = "Song Instrumentalness Mean"
   )
 
-
-
-
-
 grid.arrange(pop_line_plot, loud_line_plot, acoustic_line_plot, energy_line_plot, nrow = 2)
 
 grid.arrange(liveness_line_plot, danceability_line_plot, duration_line_plot, instrumentalness_line_plot, nrow = 2)
 ```
+
 Of note, mean song popularity increased steeply over time. This probably has to do with the rise of the internet and free music streaming, which happened during the last couple of decades. However, mean song popularity decreased sharply in the last couple of years-- perhaps because not as many people have had the chance to listen to certain songs yet. Mean loudness and energy have generally increased over time, while mean song acousticness has dropped. Mean song liveness and instrumetallness had moderate downward trends. Mean song duration rose over time but has dropped again in the last couple of decades. Song danceability fell from the 1920s to the 1950s but has been on an upward trajectory ever since. 
 
 ### Bivariate EDA: Relationships between popularity and song features 
@@ -124,29 +123,24 @@ As part of our EDA, we used a step-by-step process to create an ARIMA model of m
 
 ```{r step1}
 # covert dataframe to time series
-spotify_mean_daily <- spotify_data %>% 
-  filter(nchar(release_date) > 7) %>% 
-  group_by(release_date) %>% 
-  summarise_at(stat_cols, list(daily_mean = mean)) %>% 
-  arrange(release_date)
+spotify_mean_yearly$year <- as.Date(as.character(spotify_mean_yearly$year), format = "%Y")
 
-spotify_mean_daily$release_date <- as.Date(spotify_mean_daily$release_date, format =  "%Y-%m-%d")
-spotify_ts <- xts(spotify_mean_daily$popularity_daily_mean, spotify_mean_daily$release_date)
+spotify_ts <- xts(spotify_mean_yearly$popularity_year_mean, spotify_mean_yearly$year)
 spotify_ts <- as.ts(spotify_ts)
 
 # forecast ARIMA
 step1 <- forecast::ggtsdisplay(spotify_ts, points = FALSE)
 ```
 
-Based on the time series visualization, we will begin by incorporating
-an MA(1) component informed by the PACF echoing pattern. We will also 
+Based on the time series visualization, we will begin by applying
+first-order differencing with an $ARIMA(0,1,0)$ model. We will also 
 store the root mean squared error value to track our progress while 
 iterating through ARIMA models.
 
 ```{r step2, cache=TRUE}
-# MA(1)
+# first-order differencing
 step2 <- forecast::Arima(
-  spotify_ts, order = c(0, 0, 1)
+  spotify_ts, order = c(0, 1, 0)
 )
 forecast::ggtsdisplay(step2$residuals, points = FALSE, lag.max = 36)
 
@@ -157,15 +151,15 @@ step2_rmse <- yardstick::rmse_vec(
 )
 ```
 
-The time series has somewhat improved, but there remains some echoing patterns
-that we can alleviate with differencing. We will apply first-order differencing 
-on top of the MA(1) process with an $ARIMA(0,1,1)$ model. 
+The time series has somewhat improved, but there remains some patterns
+that we can alleviate with an AR process. We will apply a AR(1) process
+on top of the first-order differencing with an $ARIMA(1,1,0)$ model. 
 
 ```{r step3, cache=TRUE}
-# MA(1)
 # first order differencing
+# AR(1)
 step3 <- forecast::Arima(
-  spotify_ts, order = c(0, 1, 1)
+  spotify_ts, order = c(1, 1, 0)
 )
 forecast::ggtsdisplay(step3$residuals, points = FALSE, lag.max = 36)
 
@@ -176,73 +170,45 @@ step3_rmse <- yardstick::rmse_vec(
  )
 ```
 
-The differencing definitely improved the model, bringing the root mean squared
-error from `r round(step2_rmse, 2)` to `r round(step3_rmse, 2)`. The echoing 
-pattern in the PACF has been resolved, but we can move forward by incorporating
-an AR component based on the ACF spike. We will add an AR(2) to the existing model, 
-resulting in an $ARIMA(2,1,1)$ model.
-
-```{r step4, cache=TRUE}
-# MA(1)
-# first order differencing
-# AR(2)
-step4 <- forecast::Arima(
-  spotify_ts, order = c(2, 1, 1)
-)
-forecast::ggtsdisplay(step4$residuals, points = FALSE, lag.max = 36)
-
-# store rmse value
-step4_rmse <- yardstick::rmse_vec(
-  spotify_ts %>% unclass(),
-  step4$fitted %>% unclass()
-)
-```
+The AR component somewhat improved the model, bringing the root mean squared
+error from `r round(step2_rmse, 2)` to `r round(step3_rmse, 2)`. We can confirm
+our findings using the `auto.arima` function.
 
 ```{r auto-model-selection}
+# auto arima on time series
 forecast::auto.arima(spotify_ts)
-
 ```
-
-After utilizing the auto.arima function, we confirm our findings and determine that this is a ARIMA(2,1,1) model. 
 
 ```{r model-fit}
 # model fit
-model = "Final Model - forecast::Arima (2,1,1) "
-rmse = (spotify_ts-step4$fitted)^2 %>% mean() %>% sqrt() %>% round(3) %>% paste0("   [RMSE: ", . ,"]")
+model = "Final Model - forecast::Arima (1,1,0) "
+rmse = (spotify_ts-step3$fitted)^2 %>% mean() %>% sqrt() %>% round(3) %>% paste0("   [RMSE: ", . ,"]")
 
-step4 %>%
+step3 %>%
   {tibble(
     spotify_ts = spotify_ts %>% unclass(),
     model = .$fitted %>% unclass(),
     time  = time(.$fitted) %>% unclass()
   )} %>% 
-  tidyr::gather(var, avg_temp, -time) %>%
+  tidyr::gather(var, popularity_year_mean, -time) %>%
   mutate(var = forcats::as_factor(var)) %>%
-  ggplot(aes(x=time, y=avg_temp, color=var)) + 
+  ggplot(aes(x=time, y=popularity_year_mean, color=var)) + 
     geom_line(alpha=0.75, size=0.8) +
     labs(title = paste(model, rmse), x = "Time", y = "Average Popularity Score",
          color = "")
 ```
 
-After applying an MA(1) component, first order differencing, and an AR(2) component,
+After applying first order differencing and an AR(1) component,
 the model fit appears to be finished! The ACF and PACF do not appear to have a pattern 
 after the final step, and the final model against the given data looks sufficient as well. 
-The model for this data required the following parameters: $ARIMA(2,1,1)$, and the final 
-root mean squared error is `r round(step4_rmse, 2)`.
+The model for this data required the following parameters: $ARIMA(1,1,0)$, and the final 
+root mean squared error is `r round(step3_rmse, 2)`.
 
-```{r}
-lm1 = lm(popularity~year, data = spotify_data)
-glm1 = glm(popularity ~ year, data = spotify_data, family = poisson)
-extractAIC(lm1)
-lm2 = lm(popularity~year + poly(2, year), data = spotify_data)
-extractAIC(lm2)
-
-
-```
-
-```{r}
-lm2 = lm(popularity~year + danceability + loudness + energy + instrumentalness, data = spotify_data)
-
+```{r arima-model-output}
+# report ARIMA model
+as_tsibble(spotify_ts) %>% 
+  model(ARIMA(value ~ pdq(1, 1, 0))) %>% 
+  report()
 ```
 
 ## Model fitting 
@@ -250,9 +216,6 @@ lm2 = lm(popularity~year + danceability + loudness + energy + instrumentalness, 
 ## Discussion
 
 Discussion goes here...
-
-
-
 
 
 ```{r}
