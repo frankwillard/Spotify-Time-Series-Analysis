@@ -243,7 +243,7 @@ speechiness_line_plotm <- ggplot(data = spotify_mean_monthly, aes(x = month, spe
     title = "Monthly ts of Speechiness"
   )
 
-tempo_line_plotm <- ggplot(data = spotify_mean_monthly, aes(x = month, tempo_year_month))+
+tempo_line_plotm <- ggplot(data = spotify_mean_monthly, aes(x = month, tempo_month_mean))+
   geom_line() + 
   labs(
     x = "Month",
@@ -326,9 +326,9 @@ tempo_bveda <- spotify_mean_monthly %>%
 
 grid.arrange(dance_bveda, loud_bveda, energy_bveda, instrumentalness_bveda, nrow = 2)
 
-grid.arrange(acousticness_bveda, liveness_bveda, duration_bveda, NULL, nrow = 2)
+grid.arrange(acousticness_bveda, liveness_bveda, duration_bveda, nrow = 2)
 
-grid.arrange(explicitness_bveda, speechiness_bveda, tempo_bveda, NULL, nrow = 2)
+grid.arrange(explicitness_bveda, speechiness_bveda, tempo_bveda, nrow = 2)
 ```
 
 ```{r}
