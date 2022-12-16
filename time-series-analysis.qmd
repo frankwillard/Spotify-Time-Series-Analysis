@@ -317,6 +317,15 @@ m %>% report()
 
 ## Model fitting 
 
+Our goal in creating this model is to predict monthly mean song popularity based on monthly mean song features. From our EDA, we can see that _____ had associations with monthly mean song popularity. We will start by fitting a multiple linear regression model with mean monthly popularity as the outcome, the features identified in EDA as predictors, and  no temporal component. 
+
+```{r}
+model1 <- lm(popularity_month_mean ~ danceability_month_mean + duration_ms_month_mean + energy_month_mean + explicit_month_mean +  instrumentalness_month_mean + key_month_mean + liveness_month_mean + loudness_month_mean + mode_month_mean +  speechiness_month_mean + tempo_month_mean + valence_month_mean, data = spotify_mean_monthly) 
+
+summary(model1)
+
+```
+
 ## Discussion
 
 Discussion goes here...
