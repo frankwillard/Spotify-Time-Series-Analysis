@@ -840,5 +840,91 @@ From healthcare data to company analytics, real-world data often includes tempor
 
 ### Appendix/ Extra Analysis:
 
-As a supplement to our analysis of mean monthly song popularity, we decided to do an analysis of the predictors of individual song popularity, given the potential usefulness of this kind of model for music-industry professionals. We used Python instead of R for this supplementary analysis. After conducting a  more detailed exploratory data  analysis that included outlier detection and an investigation of the interaction between time period and each predictor, we fit a simple regression model, a regression model with interactions that account for the temporally varying nature of the data, and a neural network and compared the three models.
+As a supplement to our analysis of mean monthly song popularity, we decided to do an analysis of the predictors of individual song popularity, given the potential usefulness of this kind of model for music-industry professionals. We used Python instead of R for this supplementary analysis. After conducting a  more detailed exploratory data  analysis that included more data visualization, outlier detection (detectionof white noise and other non-song tracks) and an investigation of the interaction between time period and each predictor, we fit a simplified regression model using just song metrics, a regression model with interactions that account for the temporally varying nature of the data (song metrics interacted with the decade they are from), and a neural network and compared the three models. 
+
+The notebook and modeling PDF have been linked below, but are not in this report, due to its sheer length.
+
+[Link to popularity modeling notebook here](https://github.com/sta344-fa22/project_fapka/blob/main/Popularity%20Modeling.pdf)
+
+[Link to popularity modeling PDF (code not suppressed due to Co-Lab) here](https://github.com/sta344-fa22/project_fapka/blob/main/Popularity_Modeling.ipynb)
+
+Below is the regression model using just song metrics.
+
+Simple model RMSE score on unseen testing data: 253.76717755170372
+Simple model R^2 score on unseen testing data: 0.4594513660578803
+
+Below is a plot of X being the predicted popularity by the model and Y being the true popularity. 
+
+
+```{r}
+
+knitr::include_graphics('Simple Fit.png')
+
+
+```
+
+We then created a model using a regression of the 30 most important features found by a recursive feature elimination of interactions between every decade and each song metric. Interactions were used as the relationship a song metric has with popularity appeared to change throughout time, based on the trend of the era, which was demonstrated in the data visualization in the report. Additionally, music itself has become more popular in time, or rather, more recent music will have more streams on Spotify by nature of its constituency. The key interactions found from RFE were 
+ 'liveness decade_1930s', 'liveness decade_1940s', 'liveness decade_1950s', 'loudness decade_1920s', 'loudness decade_1930s', 'loudness decade_1940s', 'loudness decade_1950s','loudness decade_1960s','loudness decade_1970s',
+'loudness decade_1980s','loudness decade_1990s','loudness decade_2000s', 'loudness decade_2010s', 'loudness decade_2020s', 'tempo decade_1920s', 'tempo decade_1930s', 'tempo decade_1940s', 'tempo decade_1950s', 'tempo decade_1960s', 'tempo decade_1990s', 'tempo decade_2000s', 'tempo decade_2010s', 'tempo decade_2020s', 'valence decade_1920s', 'valence decade_1930s', 'valence decade_1940s', 'valence decade_1950s', 'valence decade_2000s', 'valence decade_2010s'. Below is a plot of X being the predicted popularity by the model and Y being the true popularity. 
+
+Interaction Model RMSE score on unseen testing data: 110.30700501688433
+Interaction Model R^2 score on unseen testing data: 0.7650354098138841
+
+```{r}
+
+knitr::include_graphics('Interaction Fit.png')
+
+
+```
+
+Finally, we applied a deep learning approach using the song metrics and temporal information to see how the predictive accuracy would change. 
+
+Neural Networks create an uninterpretable, but perhaps better predictive model for the data. There is a lot of data, such that neural networks may train better in this setting. Furthermore, neural networks can learn complex relationships, interactions, and dependencies between variables, helping reduce the need for manual feature engineering and feature selection.
+
+While LSTMs are often used do the sequential nature of Recurrent Neural Networks and the LSTMs ability to use memory and forget gates to keep and drop important information, the data we have is time series but not sequential, as the observations are generally independent of each other, but rather the observations and their co-variates/popularity scorres are just not independent from time/era. 
+
+Thus, we use an Artificial Neural Network with a ReLU final activation function. In doing so, we bring a longer training and inference time, and the potential of overfitting. Additionally, we do not have the time to truly tune the neural network in terms of its architecture, dropout rate, regularization, optimizer, etc. Meanwhile, a Linear Regression can easily be tuned (for parameters like L1/L2 penalties and such) with a Grid Search in minutes. Finally, with the neural network, we lose interpretability in favor of predictive accuracy.
+
+NN Model RMSE score on unseen testing data: 84.26029562585006
+NN Model R^2 score on unseen testing data: 0.8205174201977617
+
+Below is a plot of X being the predicted popularity by the model and Y being the true popularity. 
+
+
+```{r}
+
+knitr::include_graphics('NN Fit.png')
+
+
+```
+
+Here, we explore Neural Networks to create an uninterpretable, but perhaps better predictive model for the data. There is a lot of data, such that neural networks may train better in this setting. Furthermore, neural networks can learn complex relationships, interactions, and dependencies between variables, helping reduce the need for manual feature engineering and feature selection.
+
+While LSTMs are often used do the sequential nature of Recurrent Neural Networks and the LSTMs ability to use memory and forget gates to keep and drop important information, the data we have is time series but not sequential, as the observations are generally independent of each other, but rather the observations and their co-variates/popularity scorres are just not independent from time/era. 
+
+Thus, we use an Artificial Neural Network with a ReLU final activation function. In doing so, we bring a longer training and inference time, and the potential of overfitting. Additionally, we do not have the time to truly tune the neural network in terms of its architecture, dropout rate, regularization, optimizer, etc. Meanwhile, a Linear Regression can easily be tuned (for parameters like L1/L2 penalties and such) with a Grid Search in minutes. Finally, with the neural network, we lose interpretability in favor of predictive accuracy.
+
+#### Key Takeaways from Appendix: Modeling
+
+The Neural Network performs better than the Linear Regression, with its R squared of 0.82 and RMSE of 84.2. The RMSE appears to be high in both the linear regression and neural network due to some especially high residuals that come from the recent 2020s data. 
+
+
+#### Key Takeaways from Appendix: Data Cleaning
+
+In the future, I would filter out extremely recent data as its popularity score is only low due to the recency of it coming out. This data can then be run through the model as a "forecasting set", in which we predict what these songs future popularity scores will be.
+
+Interestingly, even a neural network can not learn the training data that well (> R squared only in the 0.8 range), which I believe a further reflection of the fact that the metrics + temporal information is not a great proxy for predicting popularity.
+
+Some further data cleaning to remove non-songs could also be helpful. For example, there are non-song outliers, songs too recent for a popularity score, and a strong sampling bias in the data in terms of recent songs generally being of a higher popularity than other decades (proportions of popularity scores- some of this is trend in music, but also some less known tracks are just not being included).
+
+
+#### Key Takeaways from Appendix: Predictive Nature of Data
+
+It is clear from the scatter plots that the data here has high variance- songs with very similar song metrics can and often will have widely different popularities. This is ultimately because the data itself is not nuanced enough to produce a truly great predictor of a song's popularity.
+
+In thinking about what goes into a popular song nowadays, while there are absolutely trends in how songs are made, this will not be able to solely tell you the popularity. There is so much music nowadays that most music with any combination of song metrics will not have a high popularity, since it is challenging to break the glass ceiling. 
+
+Furthermore, more data is definitely required to truly predict a song's popularity score. For example, two artists (e.g. Kendrick Lamar and Billy Joel)releasing songs with the same song metrics will lead to wildly different results. There are many factors that go into songs making the charts nowadays, including how famous an artist already is, its use in social media/pop culture leading to it trending, as well as other factors that make people like a given song. Additionally, data about what niche the artist/its fans fall into could be helpful to know how a song and its given metrics falls into a niche. While this would be helpful, it is still really challenging to create a model that will predict any kind of break through from a small artist, given data on fame. However, one can make a model that ranks songs well in terms of their ability to become popular, given a bunch of small artists, which seems like a great use case of this kind of song data.
+
+Ultimately, music is quite hard to quantify, and more data is required to truly determine what will make people like and listen to songs. 
 
