@@ -908,6 +908,9 @@ Thus, we use an Artificial Neural Network with a ReLU final activation function.
 
 The Neural Network performs better than the Linear Regression, with its R squared of 0.82 and RMSE of 84.2. The RMSE appears to be high in both the linear regression and neural network due to some especially high residuals that come from the recent 2020s data. 
 
+There is a clear performance boost from adding temporal information, which makes sense as many variables even changed sign in terms of their coefficients from earlier decades to later decades in the model, suggesting a shift in its impact on popularity. Additionally, music itself gained in popularity score, which also changes its relationships with other variables. 
+
+The Neural Network's performing better than the interaction regression shows there is still more left to be desired in the interpretable regression. There may be complex non-linear relationships the network finds, for exmaple, transforms or potentially even more structured change points in the relationships between song metrics and popularity. Further feature engineering and selection should ideally be performed to increase the interpretable model's performance relative to the neural network to eke out as much information as possible on the relationships between metrics and song popularity. More specifically, future work on this project would definitely include change point detection and analysis to further boost the interpretable modeling.
 
 #### Key Takeaways from Appendix: Data Cleaning
 
