@@ -36,9 +36,9 @@ The original dataset for this project contains nineteen variables, including son
 
 ### Data Preparation
 
-First, we altered the structure of our data, creating a new dataset (`spotify_mean_yearly`) that contains each year from 1921 to 2010 and the mean values of the following feature variables: acousticness, danceability, duration, energy, explicit, instrumentalness, key, liveness, loudness, mode, popularity, speechiness, tempo, and valence. We also created a dataset at monthly granularity. Notably, filtering the release date for only observations that contain monthly data makes the dataset substantially smaller, but we don't have a strong reason to believe that this will produce bias in the data especially given that even some very recent songs with high popularity scores were missing month/ day of release information. 
+First, we altered the structure of our data, creating a new dataset (`spotify_mean_yearly`) that contains each year from 1921 to 2010 and the mean values of the following feature variables: acousticness, danceability, duration, energy, explicit, instrumentalness, key, liveness, loudness, mode, popularity, speechiness, tempo, and valence. We also created a dataset at monthly granularity to establish a regular time interval off which to model. Notably, filtering the release date for only observations that contain monthly data meant we disincluded about 30% of observations (50382 out of 169909 originally), but we don't have a strong reason to believe that this aggregation will produce bias in the data, given that the time series for yearly mean popularity of songs with and without monthly data matched (see plot).  
 
-```{r clean data, message = FALSE, include = FALSE}
+```{r clean data, message = FALSE, echo = FALSE, out.width = "60%", out.width = "60%"}
 # data cleaning
 cols_to_drop <- c("year", "release_date", "id", "name", "artists")
 all_cols <- colnames(spotify_data)
@@ -56,6 +56,20 @@ spotify_mean_monthly <- spotify_data %>%
   group_by(month = lubridate::floor_date(as.Date(release_date), 'month')) %>% 
   summarise_at(stat_cols, list(month_mean = mean)) %>% 
   filter(month < '2020-01-01')
+
+#check that aggregation won't bias
+spotify_data %>%
+  mutate(hasmonth = ifelse(nchar(release_date) < 7, "no", "yes")) %>%
+  group_by(year, hasmonth) %>%
+  summarize(count = n(), meanpop = mean(popularity)) %>% 
+  group_by(year) %>%
+  mutate(perc = count/sum(count))%>%
+  ggplot(aes(x = year, y = meanpop, color = hasmonth)) + geom_line() + 
+  labs(title = "Yearly time series of data with and without monthly granularity",
+       color = "Has month?",
+       x = "Year",
+       y = "Mean popularity score") + theme_minimal() + 
+  scale_color_discrete(palette = "Set2")
 ```
 
 ### EDA: Trends over time
