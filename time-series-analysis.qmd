@@ -64,328 +64,335 @@ spotify_data %>%
   summarize(count = n(), meanpop = mean(popularity)) %>% 
   group_by(year) %>%
   mutate(perc = count/sum(count))%>%
-  ggplot(aes(x = year, y = meanpop, color = hasmonth)) + geom_line() + 
-  labs(title = "Yearly time series of data with and without monthly granularity",
+  ggplot(aes(x = year, y = meanpop, color = hasmonth)) + 
+  geom_line(linewidth = 1) + 
+  labs(title = "Yearly time series of Spotify data by available granularity",
        color = "Has month?",
        x = "Year",
        y = "Mean popularity score") + theme_minimal() + 
-  scale_color_discrete(palette = "Set2")
+  scale_color_manual(values = c("#191414", "#1DB954"))
 ```
 
 ### EDA: Trends over time
 
 In order to get a general sense of the trends in this data, we plotted the mean yearly values of each of the song feature variables.  
 
-```{r visualize yearly data, message = FALSE, include = FALSE}
+```{r visualize yearly data, message = FALSE, echo = FALSE}
 # data visualization for yearly trends
 pop_line_plot <- ggplot(data = spotify_mean_yearly, aes(x = year, y = popularity_year_mean)) +
-  geom_line() + 
+  geom_line(color = "#1DB954") + 
+  theme_minimal() + 
   labs(
     x = "Year",
     y = "Song Popularity Mean",
-    title = "Yearly time series of Popularity"
+    title = "Yearly ts Popularity"
   )
 
 loud_line_plot <- ggplot(data = spotify_mean_yearly, aes(x = year, y = loudness_year_mean)) +
-  geom_line() + 
+  geom_line(color = "#1DB954") + 
+  theme_minimal() + 
   labs(
     x = "Year",
     y = "Song Loudness Mean",
-    title = "Yearly time series of Loudness"
-  )
+    title = "Yearly ts Loudness")  
 
 acoustic_line_plot <- ggplot(data = spotify_mean_yearly, aes(x = year, y = acousticness_year_mean)) +
-  geom_line() + 
-  labs(
+ geom_line(color = "#1DB954") + 
+  theme_minimal() + 
+   labs(
     x = "Year",
     y = "Song Acousticness Mean",
-    title = "Yearly time series of Acoustic"
+    title = "Yearly ts Acoustic"
   )
 
 energy_line_plot <- ggplot(data = spotify_mean_yearly, aes(x = year, y = energy_year_mean)) +
-  geom_line() + 
-  labs(
+ geom_line(color = "#1DB954") + 
+  theme_minimal() + 
+   labs(
     x = "Year",
     y = "Song Energy Mean",
-    title = "Yearly time series of Energy"
+    title = "Yearly ts Energy"
   )
 
 danceability_line_plot <- ggplot(data = spotify_mean_yearly, aes(x = year, danceability_year_mean))+
-  geom_line() + 
-  labs(
+ geom_line(color = "#1DB954") + 
+  theme_minimal() + 
+   labs(
     x = "Year",
     y = "Song Danceability Mean",
-    title = "Yearly time series of Danceability"
+    title = "Yearly ts Danceability"
   )
 
 liveness_line_plot <- ggplot(data = spotify_mean_yearly, aes(x = year, liveness_year_mean))+
-  geom_line() + 
-  labs(
+ geom_line(color = "#1DB954") + 
+  theme_minimal() + 
+   labs(
     x = "Year",
     y = "Song Liveness Mean",
-    title = "Yearly time series of Liveness"
+    title = "Yearly ts Liveness"
   )
 
 duration_line_plot <- ggplot(data = spotify_mean_yearly, aes(x = year, duration_ms_year_mean))+
-  geom_line() + 
-  labs(
+ geom_line(color = "#1DB954") + 
+  theme_minimal() + 
+   labs(
     x = "Year",
     y = "Song Duration Mean",
-    title = "Yearly time series of Duration"
+    title = "Yearly ts Duration"
   )
 
 instrumentalness_line_plot <- ggplot(data = spotify_mean_yearly, aes(x = year, instrumentalness_year_mean))+
-  geom_line() + 
-  labs(
+ geom_line(color = "#1DB954") + 
+  theme_minimal() + 
+   labs(
     x = "Year",
     y = "Song Instrumentalness Mean",
-    title = "Yearly ts of Instrumentalness"
+    title = "Yearly ts Instrumentalness"
   )
 
 explicitness_line_plot <- ggplot(data = spotify_mean_yearly, aes(x = year, explicit_year_mean))+
-  geom_line() + 
-  labs(
+ geom_line(color = "#1DB954") + 
+  theme_minimal() + 
+   labs(
     x = "Year",
     y = "Song Explicitness Mean",
-    title = "Yearly ts of Explicitness"
+    title = "Yearly ts Explicitness"
   )
 
 speechiness_line_plot <- ggplot(data = spotify_mean_yearly, aes(x = year, speechiness_year_mean))+
-  geom_line() + 
-  labs(
+ geom_line(color = "#1DB954") + 
+  theme_minimal() + 
+   labs(
     x = "Year",
     y = "Song Speechiness Mean",
-    title = "Yearly ts of Speechiness"
+    title = "Yearly ts Speechiness"
   )
 
 tempo_line_plot <- ggplot(data = spotify_mean_yearly, aes(x = year, tempo_year_mean))+
-  geom_line() + 
-  labs(
+ geom_line(color = "#1DB954") + 
+  theme_minimal() + 
+   labs(
     x = "Year",
     y = "Song Tempo Mean",
-    title = "Yearly Time Series of Tempo"
+    title = "Yearly ts Tempo"
   )
-grid.arrange(pop_line_plot, loud_line_plot, acoustic_line_plot, energy_line_plot, nrow = 2)
+grid.arrange(pop_line_plot, loud_line_plot, acoustic_line_plot, 
+             energy_line_plot, liveness_line_plot, danceability_line_plot, nrow = 2)
 
-grid.arrange(liveness_line_plot, danceability_line_plot, duration_line_plot, instrumentalness_line_plot, nrow = 2)
-
-grid.arrange(explicitness_line_plot, speechiness_line_plot, tempo_line_plot, nrow = 2)
+grid.arrange(duration_line_plot, instrumentalness_line_plot, explicitness_line_plot, 
+             speechiness_line_plot, tempo_line_plot, NULL, nrow = 2)
 ```
 Of note, mean song popularity increased steeply over time. This probably has to do with the rise of the internet and free music streaming, which happened during the last couple of decades. However, mean song popularity decreased sharply in the last couple of years-- perhaps because not as many people have had the chance to listen to certain songs yet. Mean loudness and energy have generally increased over time, while mean song acousticness has dropped. Mean song liveness and instrumetalness had moderate downward trends. Mean song duration rose over time but has dropped again in the last couple of decades. Song danceability fell from the 1920s to the 1950s but has been on an upward trajectory ever since.
 
 Now, we plotted the plot the mean monthly values of each of the song feature variables to examine these trends at a more granular level.
 
-```{r monthly data, message = FALSE, include = FALSE}
+```{r monthly data, message = FALSE, echo = FALSE}
 # data visualization for monthly
 pop_line_plotm <- ggplot(data = spotify_mean_monthly, aes(x = month, y = popularity_month_mean)) +
-  geom_line() + 
-  labs(
+ geom_line(color = "#1DB954") + 
+  theme_minimal() + 
+     labs(
     x = "Month",
     y = "Song Popularity Mean",
-    title = "Monthly time series of Popularity"
+    title = "Monthly Popularity"
   )
 
 loud_line_plotm <- ggplot(data = spotify_mean_monthly, aes(x = month, y = loudness_month_mean)) +
-  geom_line() + 
-  labs(
+ geom_line(color = "#1DB954") + 
+  theme_minimal() + 
+     labs(
     x = "Month",
     y = "Song Loudness Mean",
-    title = "Monthly time series of Loudness"
+    title = "Monthly Loudness"
   )
 
 acoustic_line_plotm <- ggplot(data = spotify_mean_monthly, aes(x = month, y = acousticness_month_mean)) +
-  geom_line() + 
-  labs(
+ geom_line(color = "#1DB954") + 
+  theme_minimal() + 
+     labs(
     x = "Month",
     y = "Song Acousticness Mean",
-    title = "Monthly time series of Acoustic"
+    title = "Monthly Acoustic"
   )
 
 energy_line_plotm <- ggplot(data = spotify_mean_monthly, aes(x = month, y = energy_month_mean)) +
-  geom_line() + 
-  labs(
+ geom_line(color = "#1DB954") + 
+  theme_minimal() + 
+     labs(
     x = "Month",
     y = "Song Energy Mean",
-    title = "Monthly time series of Energy"
+    title = "Monthly Energy"
   )
 
 danceability_line_plotm <- ggplot(data = spotify_mean_monthly, aes(x = month, danceability_month_mean))+
-  geom_line() + 
-  labs(
+ geom_line(color = "#1DB954") + 
+  theme_minimal() + 
+     labs(
     x = "Month",
     y = "Song Danceability Mean",
-    title = "Monthly time series of Danceability"
+    title = "Monthly Danceability"
   )
 
 liveness_line_plotm <- ggplot(data = spotify_mean_monthly, aes(x = month, liveness_month_mean))+
-  geom_line() + 
-  labs(
+ geom_line(color = "#1DB954") + 
+  theme_minimal() + 
+     labs(
     x = "Month",
     y = "Song Liveness Mean",
-    title = "Monthly time series of Liveness"
+    title = "Monthly Liveness"
   )
 
 duration_line_plotm <- ggplot(data = spotify_mean_monthly, aes(x = month, duration_ms_month_mean))+
-  geom_line() + 
-  labs(
+ geom_line(color = "#1DB954") + 
+  theme_minimal() + 
+     labs(
     x = "Month",
     y = "Song Duration Mean",
-    title = "Monthly time series of Duration"
+    title = "Monthly Duration"
   )
 
 instrumentalness_line_plotm <- ggplot(data = spotify_mean_monthly, aes(x = month, instrumentalness_month_mean))+
-  geom_line() + 
-  labs(
+ geom_line(color = "#1DB954") + 
+  theme_minimal() + 
+     labs(
     x = "Month",
     y = "Song Instrumentalness Mean",
-    title = "Monthly ts of Instrumentalness"
+    title = "Monthly Instrumentalness"
   )
 
 explicitness_line_plotm <- ggplot(data = spotify_mean_monthly, aes(x = month, explicit_month_mean))+
-  geom_line() + 
-  labs(
+ geom_line(color = "#1DB954") + 
+  theme_minimal() + 
+     labs(
     x = "Month",
     y = "Song Explicitness Mean",
-    title = "Montly ts of Explicitness"
+    title = "Montly Explicitness"
   )
 
 speechiness_line_plotm <- ggplot(data = spotify_mean_monthly, aes(x = month, speechiness_month_mean))+
-  geom_line() + 
-  labs(
+  geom_line(color = "#1DB954") + 
+  theme_minimal() + 
+     labs(
     x = "Month",
     y = "Song Speechiness Mean",
-    title = "Monthly ts of Speechiness"
+    title = "Monthly Speechiness"
   )
 
 tempo_line_plotm <- ggplot(data = spotify_mean_monthly, aes(x = month, tempo_month_mean))+
-  geom_line() + 
-  labs(
+ geom_line(color = "#1DB954") + 
+  theme_minimal() + 
+     labs(
     x = "Month",
     y = "Song Tempo Mean",
-    title = "Monthly Time Series of Tempo"
+    title = "Monthly Tempo"
   )
 
-grid.arrange(pop_line_plotm, loud_line_plotm, acoustic_line_plotm, energy_line_plotm, nrow = 2)
+grid.arrange(pop_line_plotm, loud_line_plotm, acoustic_line_plotm, 
+             energy_line_plotm, liveness_line_plotm, danceability_line_plotm, 
+             nrow = 2)
 
-grid.arrange(liveness_line_plotm, danceability_line_plotm, duration_line_plotm, instrumentalness_line_plotm, nrow = 2)
-
-grid.arrange(explicitness_line_plotm, speechiness_line_plotm, tempo_line_plotm, nrow = 2)
+grid.arrange(duration_line_plotm, instrumentalness_line_plotm, explicitness_line_plotm, 
+             speechiness_line_plotm, tempo_line_plotm, NULL, 
+             nrow = 2)
 ```
 
 After plotting at a monthly timescale, we can see more nuance in these trends. For instance, the downward trend in liveness that we observed in the yearly time series for liveness appeared to be more related to a couple of months early in the century with particularly high liveness that biased the averages. Similarly, for instrumentalness, there seemed to be much more variance in mean monthly values early in the century that created the illusion of a crisper downward trend. Because these monthly time series apear to give us far more information than yearly time series, at this point we chose to create a model that explains monthly mean popularity based on monthly mean predictor values rather than using a yearly temporal granularity. Additionally, the ability to predict monthly mean popularity would likely be more useful for a company than yearly in terms of making timely and specific business decisions. 
 
 ### Bivariate EDA: Relationships between popularity and song features 
 
-```{r bv plots, message = FALSE, include = FALSE}
+To continue our EDA and check which of these covariates might have a relationship with our outocme variable, song popularity, we plotted each variable against the response at monthly granularity. We also fit a rudimentary linear model (black) and loess curve (green) to each. 
+
+```{r bv plots, message = FALSE, echo = FALSE}
 #need to add titles & fix axes 
 dance_bveda <- spotify_mean_monthly %>%
   ggplot(aes(x=danceability_month_mean, y = popularity_month_mean)) + 
-  geom_point() + 
-  geom_smooth(color='blue', alpha = 0.75,se = FALSE, method = "lm") + 
-  geom_smooth(color = "red", alpha = 0.25, se = FALSE) 
+ geom_point(color = "#B7B6C2") + 
+  theme_minimal() + 
+    geom_smooth(color='#191414', alpha = 0.75,se = FALSE, method = "lm") + 
+  geom_smooth(color = "#1DB954", alpha = 0.25, se = FALSE) +
+  labs(title = "Dance on popularity", y = "Mean popularity", x = "Mean dance score")
 
 loud_bveda <- spotify_mean_monthly %>%
   ggplot(aes(x=loudness_month_mean, y = popularity_month_mean)) + 
-  geom_point() + 
-  geom_smooth(color='blue', alpha = 0.75,se = FALSE, method = "lm") + 
-  geom_smooth(color = "red", alpha = 0.75, se = FALSE) 
+ geom_point(color = "#B7B6C2") + 
+  theme_minimal() + 
+    geom_smooth(color='#191414', alpha = 0.75,se = FALSE, method = "lm") + 
+  geom_smooth(color = "#1DB954", alpha = 0.75, se = FALSE) +
+  labs(title = "Loudness on popularity", y = "Mean popularity", x = "Mean loudness score")
 
 energy_bveda <- spotify_mean_monthly %>%
   ggplot(aes(x=energy_month_mean, y = popularity_month_mean)) + 
-  geom_point() + 
-  geom_smooth(color='blue', alpha = 0.75,se = FALSE, method = "lm") + 
-  geom_smooth(color = "red", alpha = 0.75, se = FALSE) 
+ geom_point(color = "#B7B6C2") + 
+  theme_minimal() + 
+    geom_smooth(color='#191414', alpha = 0.75,se = FALSE, method = "lm") + 
+  geom_smooth(color = "#1DB954", alpha = 0.75, se = FALSE) +
+  labs(title = "Energy on popularity", y = "Mean popularity", x = "Mean energy score")
 
 instrumentalness_bveda <- spotify_mean_monthly %>%
   ggplot(aes(x=instrumentalness_month_mean, y = popularity_month_mean)) + 
-  geom_point() + 
-  geom_smooth(color='blue', alpha = 0.75,se = FALSE, method = "lm") + 
-  geom_smooth(color = "red", alpha = 0.75, se = FALSE) 
+ geom_point(color = "#B7B6C2") + 
+  theme_minimal() + 
+    geom_smooth(color='#191414', alpha = 0.75,se = FALSE, method = "lm") + 
+  geom_smooth(color = "#1DB954", alpha = 0.75, se = FALSE) +
+  labs(title = "Instrumentalness", y = "Mean popularity", x = "Mean instrumentalness")
 
 acousticness_bveda <- spotify_mean_monthly %>%
   ggplot(aes(x=acousticness_month_mean, y = popularity_month_mean)) + 
-  geom_point() + 
-  geom_smooth(color='blue', alpha = 0.75,se = FALSE, method = "lm") + 
-  geom_smooth(color = "red", alpha = 0.75, se = FALSE) 
+ geom_point(color = "#B7B6C2") + 
+  theme_minimal() + 
+    geom_smooth(color='#191414', alpha = 0.75,se = FALSE, method = "lm") + 
+  geom_smooth(color = "#1DB954", alpha = 0.75, se = FALSE) +
+  labs(title = "Acousticness on popularity", y = "Mean popularity", x = "Mean acousticness score")
 
 liveness_bveda <- spotify_mean_monthly %>%
   ggplot(aes(x=liveness_month_mean, y = popularity_month_mean)) + 
-  geom_point() + 
-  geom_smooth(color='blue', alpha = 0.75,se = FALSE, method = "lm") + 
-  geom_smooth(color = "red", alpha = 0.75, se = FALSE) 
+ geom_point(color = "#B7B6C2") + 
+  theme_minimal() + 
+    geom_smooth(color='#191414', alpha = 0.75,se = FALSE, method = "lm") + 
+  geom_smooth(color = "#1DB954", alpha = 0.75, se = FALSE) +
+  labs(title = "Liveness on popularity", y = "Mean popularity", x = "Mean liveness score")
 
 duration_bveda <- spotify_mean_monthly %>%
   ggplot(aes(x=duration_ms_month_mean, y = popularity_month_mean)) + 
-  geom_point() + 
-  geom_smooth(color='blue', alpha = 0.75,se = FALSE, method = "lm") + 
-  geom_smooth(color = "red", alpha = 0.75, se = FALSE) 
+ geom_point(color = "#B7B6C2") + 
+  theme_minimal() + 
+    geom_smooth(color='#191414', alpha = 0.75,se = FALSE, method = "lm") + 
+  geom_smooth(color = "#1DB954", alpha = 0.75, se = FALSE) +
+  labs(title = "Duration on popularity", y = "Mean popularity", x = "Mean duration")
 
 explicitness_bveda <- spotify_mean_monthly %>%
   ggplot(aes(x=explicit_month_mean, y = popularity_month_mean)) + 
-  geom_point() + 
-  geom_smooth(color='blue', alpha = 0.75,se = FALSE, method = "lm") + 
-  geom_smooth(color = "red", alpha = 0.75, se = FALSE) 
+ geom_point(color = "#B7B6C2") + 
+  theme_minimal() + 
+    geom_smooth(color='#191414', alpha = 0.75,se = FALSE, method = "lm") + 
+  geom_smooth(color = "#1DB954", alpha = 0.75, se = FALSE) +
+  labs(title = "Explicitness on popularity", y = "Mean popularity", x = "Mean explicitness")
 
 speechiness_bveda <- spotify_mean_monthly %>%
   ggplot(aes(x=speechiness_month_mean, y = popularity_month_mean)) + 
-  geom_point() + 
-  geom_smooth(color='blue', alpha = 0.75,se = FALSE, method = "lm") + 
-  geom_smooth(color = "red", alpha = 0.75, se = FALSE) 
+ geom_point(color = "#B7B6C2") + 
+  theme_minimal() + 
+    geom_smooth(color='#191414', alpha = 0.75,se = FALSE, method = "lm") + 
+  geom_smooth(color = "#1DB954", alpha = 0.75, se = FALSE) +
+  labs(title = "Speechiness on popularity", y = "Mean popularity", x = "Mean speechiness")
 
 tempo_bveda <- spotify_mean_monthly %>%
   ggplot(aes(x=tempo_month_mean, y = popularity_month_mean)) + 
-  geom_point() + 
-  geom_smooth(color='blue', alpha = 0.75,se = FALSE, method = "lm") + 
-  geom_smooth(color = "red", alpha = 0.75, se = FALSE) 
+  geom_point(color = "#B7B6C2") + 
+  theme_minimal() + 
+  geom_smooth(color='#191414', alpha = 0.75,se = FALSE, method = "lm") + 
+  geom_smooth(color = "#1DB954", alpha = 0.75, se = FALSE) +
+  labs(title = "Tempo on popularity", y = "Mean popularity", x = "Mean tempo score")
 
-grid.arrange(dance_bveda, loud_bveda, energy_bveda, instrumentalness_bveda, nrow = 2)
+grid.arrange(dance_bveda, loud_bveda, energy_bveda, 
+             instrumentalness_bveda, acousticness_bveda, liveness_bveda, 
+             nrow = 2)
 
-grid.arrange(acousticness_bveda, liveness_bveda, duration_bveda, nrow = 2)
-
-grid.arrange(explicitness_bveda, speechiness_bveda, tempo_bveda, nrow = 2)
+grid.arrange(speechiness_bveda, duration_bveda, tempo_bveda, 
+             explicitness_bveda, NULL, NULL, nrow = 2)
 ```
 
-```{r}
-spotify_decades <- spotify_mean_monthly %>%
-  mutate(year = as.numeric(format(month,'%Y'))) %>%
-  mutate(decade = year - year %% 10 )
-```
-
-```{r}
-spotify_decades %>%
-  ggplot(aes(x=danceability_month_mean, y = popularity_month_mean)) + 
-  geom_point() + 
-  geom_smooth(color='blue', alpha = 0.75,se = FALSE, method = "lm") + 
-  geom_smooth(color = "red", alpha = 0.25, se = FALSE) + 
-  facet_wrap(~decade)
-
-spotify_decades %>%
-  ggplot(aes(x=loudness_month_mean, y = popularity_month_mean)) + 
-  geom_point() + 
-  geom_smooth(color='blue', alpha = 0.75,se = FALSE, method = "lm") + 
-  geom_smooth(color = "red", alpha = 0.75, se = FALSE) + 
-  facet_wrap(~decade)
-
-spotify_decades %>%
-  ggplot(aes(x=energy_month_mean, y = popularity_month_mean)) + 
-  geom_point() + 
-  geom_smooth(color='blue', alpha = 0.75,se = FALSE, method = "lm") + 
-  geom_smooth(color = "red", alpha = 0.75, se = FALSE) + 
-  facet_wrap(~decade)
-spotify_decades %>%
-  ggplot(aes(x=instrumentalness_month_mean, y = popularity_month_mean)) + 
-  geom_point() + 
-  geom_smooth(color='blue', alpha = 0.75,se = FALSE, method = "lm") + 
-  geom_smooth(color = "red", alpha = 0.75, se = FALSE) + 
-  facet_wrap(~decade)
-
-spotify_decades %>%
-  ggplot(aes(x=acousticness_month_mean, y = popularity_month_mean)) + 
-  geom_point() + 
-  geom_smooth(color='blue', alpha = 0.75,se = FALSE, method = "lm") + 
-  geom_smooth(color = "red", alpha = 0.75, se = FALSE) + 
-  facet_wrap(~decade)
-```
+The bivariate EDA (grouped rowwise by behavior), revealed some trends between the predictor and mean monthly song popularity. Danceability, Loudness, and Energy all had relatively strong positive trends with mean song popularity. Instrumentalness, Acousticness, and Liveness all had negative trends with song popularity (higher values of the predictor giving lower song popularity, and vice versa). Speechiness, Duration, and Tempo all had values gathered in one area with various popularity levels, and explicitness had a moderate positve trend with mean song popularity. The loess curve reveals some strange behavior at the very high or very low values of all eight, likely due to the fact that these more extreme popularity values are uncommon.  
 
 ### Checking cross correlation 
 
