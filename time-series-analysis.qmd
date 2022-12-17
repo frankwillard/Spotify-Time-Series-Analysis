@@ -298,7 +298,7 @@ grid.arrange(duration_line_plotm, instrumentalness_line_plotm, explicitness_line
              nrow = 2)
 ```
 
-After plotting at a monthly timescale, we can see more nuance in these trends. For instance, the downward trend in liveness that we observed in the yearly time series for liveness appeared to be more related to a couple of months early in the century with particularly high liveness that biased the averages. Similarly, for instrumentalness, there seemed to be much more variance in mean monthly values early in the century that created the illusion of a crisper downward trend. Because these monthly time series apear to give us far more information than yearly time series, at this point we chose to create a model that explains monthly mean popularity based on monthly mean predictor values rather than using a yearly temporal granularity. Additionally, the ability to predict monthly mean popularity would likely be more useful for a company than yearly in terms of making timely and specific business decisions. 
+After plotting at a monthly timescale, we can see more nuance in these trends. For instance, the downward trend in liveness that we observed in the yearly time series for liveness appears to be at least partially a result of a couple of months early in the century with particularly high mean liveness that biased the averages. Similarly, for instrumentalness, there seemed to be much more variance in mean monthly values early in the century that created the illusion of a crisper downward trend. Because these monthly time series apear to give us far more information than yearly time series, at this point we chose to create a model that explains monthly mean popularity based on monthly mean predictor values rather than using a yearly temporal granularity. Additionally, the ability to predict monthly mean popularity would likely be more useful for a company than yearly in terms of making timely and specific business decisions. 
 
 ### Bivariate EDA: Relationships between popularity and song features 
 
@@ -398,7 +398,7 @@ The bivariate EDA (grouped rowwise by behavior), revealed some trends between th
 
 ### Checking cross correlation 
 
-For the final step of our EDA, we checked the cross correlation function and correlation coefficients at lags 0-11 for all predictors. Only tempo resulted in an improvement in correlation coefficient, which is shown below. ALl others either did not show any lagged correlation, or correlation was lower with increased lags. Lagging at month 10 for tempo showed a marked decrease in RMSE, AIC and BIC. 
+For the final step of our EDA, we checked the cross correlation function and correlation coefficients at lags 0-11 for all predictors. For most of the variables, the highest pacf spike was at 0, and calculating the correlations at each lag confirmed that adding a lag would likely not improve the model. Only the tempo variable showed a higher correlation with the addition of lag (lag by 10 months). 
 
 ```{r, echo=FALSE, results='hide'}
 #lag correlations of energy on popularity 
@@ -598,7 +598,7 @@ spotify_mean_monthly %>%
 #plot lag CCF
 forecast::ggCcf(spotify_mean_monthly$tempo_month_mean, 
                 spotify_mean_monthly$popularity_month_mean,
-                main = "CCF plot for tempo lagged on popularity")
+                main = "Checking Lag for Tempo")
 
 ```
 
@@ -662,7 +662,7 @@ our findings using the `auto.arima` function:
 forecast::auto.arima(spotify_ts)
 ```
 
-```{r model-fit}
+```{r model-fit, warning = FALSE}
 # model fit
 model = "Final Model - forecast::Arima (0,1,2) "
 rmse = (spotify_ts-step3$fitted)^2 %>% mean() %>% sqrt() %>% round(3) %>% paste0("   [RMSE: ", . ,"]")
@@ -688,7 +688,7 @@ after the final step, and the final model against the given data looks sufficien
 The model for this data required the following parameters: $ARIMA(0,1,2)$, and the final 
 root mean squared error is `r round(step3_rmse, 2)`.
 
-```{r arima-model-output}
+```{r arima-model-output, include = FALSE}
 # report ARIMA model
 m = as_tsibble(spotify_ts) %>% 
   model(ARIMA(value ~ pdq(0, 1, 2)))
@@ -696,7 +696,7 @@ m = as_tsibble(spotify_ts) %>%
 
 ## Model fitting 
 
-Our goal in creating this model is to predict monthly mean song popularity based on monthly mean song features. From our EDA, we can see that danceability, energy, explicitness, instrumentalness, loudness, and tempo had linear associations with monthly mean song popularity. We will start by fitting a multiple linear regression model with mean monthly popularity as the outcome, the features identified in EDA as predictors, and no temporal component. 
+Our goal in creating this model is to predict monthly mean song popularity based on monthly mean song features. From our EDA, we can see that danceability, energy, explicitness, instrumentalness, loudness, and tempo had plausibly linear associations with monthly mean song popularity. We will start by fitting a multiple linear regression model with mean monthly popularity as the outcome, the features identified in EDA as predictors, and no temporal component. 
 
 ```{r}
 # fit model
@@ -749,13 +749,14 @@ model2_aic <- AIC(model2)
 
 The new model performed better, with an root mean squared error or `r round(model2_rmse, 3)` and an AIC of `r round(model2_aic, 3)`. The temporal component improved the model, so we will move forward by visualizing the residuals and considering a cross correlation function lag term on the response.
 
-```{r}
+```{r echo = FALSE}
 # visualize residuals
 forecast::ggtsdisplay(model2$residuals, points=FALSE)
 
 # visualize lag on residuals
 forecast::ggCcf(spotify_mean_monthly$popularity_month_mean, model2$residuals)
 ```
+From the residuals of model 2, we can see that there is likely some unaccounted for temporal autocorrelation. In this plot of the CCF of the response variable vs the residuals, we can see a spike at 10, which suggests the use of a lag(10) on the response variable as one of the predictors. For our third model attempt, we will add this predictor to model 2.
 
 ```{r}
 # fit model
@@ -789,7 +790,9 @@ model3 %>%
        x = "Time", y = "Mean popularity")
 ```
 
-The third model performed even better than the prior two, with an root mean squared error or `r round(model3_rmse, 3)` and an AIC of `r round(model3_aic, 3)`. The temporal components improved the model, but we can include an ARIMA component on the errors instead of the cross correlation terms we added in the second and third models.
+The third model performed even better than the prior two, with an root mean squared error or `r round(model3_rmse, 3)` and an AIC of `r round(model3_aic, 3)`. This technique is one way to account for temporal trends in our model, but now we will try a different technique, the use of standard regression as in model 1 but with ARIMA errors.
+
+The following model uses the same predictors as model 1, but the intercept has been removed and auto ARIMA has been used to fit the errors.
 
 ```{r}
 # Create matrix of predictors
@@ -824,8 +827,18 @@ spotify_mean_monthly %>%
        x = "Time", y = "Mean popularity")
 ```
 
-The ARIMA model included alongside the multiple linear regression performed the best in terms of AIC, yielding an AIC of `r round(model4_aic, 3)`.
+Interestingly, auto ARIMA produced the same ARIMA model as the ARIMA model we fit to the mean monthly popularity time series in EDA.  This model had the best AIC value of all four models, yielding an AIC of `r round(model4_aic, 3)`. 
 
 ## Discussion
 
-Discussion goes here...
+In this project, we fit a model to the mean popularity of songs released every month from 1920 to 2020 using multiple linear regression with ARIMA errors. We started by doing univariate exploratory data analysis, at which point we decided to construct our model at a monthly temporal granularity. Then, we did bivariate analysis to investigate the relationship between each potential predictor variable and mean monthly popularity. We used this analysis to select predictor variables for our model. Our initial model was a simple multiple linear regression model with mean popularity as the dependent variable and each of the mean monthly predictor variables as covariates. After plotting the predicted values from this model against the actual data, it was clear that the combination of covariates we had chosen did have value in predicting the mean monthly popularity, as expected based on the relationships we observed during bivariate analysis. However, there was clearly still a lot of noise that was unaccounted for, which we suspected was due to temporal trends in the data. We decided to try two different approaches to accounting for the spatial component of this model. First, we  used cross-correlation functions to check whether lagging any of the predictors would be useful; we ended up lagging one of the variables by 10 month and then based on the residuals of that model we included a 10-month lag on the response variable as one of the predictors. Both of these steps lowered the AIC, which we used as a model comparison metric. For our second approach, we used the same original multiple linear regression model but then fit an ARIMA model to the leftover temporal autocorrelation. Interestingly, using the automatic ARIMA function generated the same ARIMA parameters (0,1,2) as the manually fitted ARIMA model we fitted to the mean monthly popularity time series as part of exploratory data analysis. This model produced the lowest AIC value of all of the models fit up to that point, leading us to believe that a multiple linear regression with ARIMA errors is better suited to this data than using lagged predictors as covariates in a traditional regression model. 
+
+Our final model is a multiple linear regression model with ARIMA errors. The MLR covariates included are mean monthly values of the following song features: energy (a measure of intensity), explicitness, danceability, instrumentalness (amount of vocal content), loudness, and tempo. Higher loudness, danceability and explicitness are associated with higher popularity holding the other predictors constant, while higher instrumentalness and tempo are associated with lower popularity holding all else constant. The ARIMA errors are first-order differenced, with an AR component of 0 and an MA component of 2.
+
+From healthcare data to company analytics, real-world data often includes temporal components. Models of indices like the Spotify popularity index are essential for a company’s ability to predict trends over time and to understand what factors impact customer engagement in relation to time. We have found that a multiple linear regression model with ARIMA errors is best suited to modeling mean monthly song popularity based on song release dates and other features data. Future investigations of temporal trends in Spotify data could include split modeling to gain a better understanding of how predictors have differentially affected popularity depending on the time  period of release date and  dividing up the three facets of the popularity index (listen total, frequency and recency) to see how predictors affect these outcomes differently. A key limitation of this project is that while the acoustic features of songs likely trend towards certain values based on what is popular in society at a given time, they fail to capture elements like artist popularity and media/social media attention that are inherently essential considerations in modeling song popularity. Spotify also has a measure of artist popularity, and future modeling projects using this data should consider linking that metric to this data as a proxy measure for the various components of the public attention directed toward a song that are likely to be extremely predictive of its popularity . 
+
+
+### Appendix/ Extra Analysis:
+
+As a supplement to our analysis of mean monthly song popularity, we decided to do an analysis of the predictors of individual song popularity, given the potential usefulness of this kind of model for music-industry professionals. We used Python instead of R for this supplementary analysis. After conducting a  more detailed exploratory data  analysis that included outlier detection and an investigation of the interaction between time period and each predictor, we fit a simple regression model, a regression model with interactions that account for the temporally varying nature of the data, and a neural network and compared the three models.
+
