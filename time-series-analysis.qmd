@@ -842,7 +842,7 @@ From healthcare data to company analytics, real-world data often includes tempor
 
 As a supplement to our analysis of mean monthly song popularity, we decided to do an analysis of the predictors of individual song popularity, given the potential usefulness of this kind of model for music-industry professionals. We used Python instead of R for this supplementary analysis. After conducting a  more detailed exploratory data  analysis that included more data visualization, outlier detection (detectionof white noise and other non-song tracks) and an investigation of the interaction between time period and each predictor, we fit a simplified regression model using just song metrics, a regression model with interactions that account for the temporally varying nature of the data (song metrics interacted with the decade they are from), and a neural network and compared the three models. 
 
-The notebook and modeling PDF have been linked below, but are not in this report, due to its sheer length.
+The notebook and modeling PDF have been linked below, but are not in this report, due to its sheer length. However, they are linked below in order to show the modeling code, extra data visualization of initial data and modeling, and other interesting findings:
 
 [Link to popularity modeling notebook here](https://github.com/sta344-fa22/project_fapka/blob/main/Popularity%20Modeling.pdf)
 
@@ -852,6 +852,17 @@ Below is the regression model using just song metrics.
 
 Simple model RMSE score on unseen testing data: 253.76717755170372
 Simple model R^2 score on unseen testing data: 0.4594513660578803
+
+Model coefficients:
+acousticness: -8.70890032844128
+danceability: 4.725511699386118
+energy: 3.0230875281940155
+instrumentalness: -2.1648771721870097
+liveness: -1.3400239544709236
+loudness: 1.8206445604067238
+speechiness: -3.870777766773358
+tempo: 0.7732670288440187
+valence: -5.992685131340313
 
 Below is a plot of X being the predicted popularity by the model and Y being the true popularity. 
 
@@ -863,12 +874,45 @@ knitr::include_graphics('Simple Fit.png')
 
 ```
 
-We then created a model using a regression of the 30 most important features found by a recursive feature elimination of interactions between every decade and each song metric. Interactions were used as the relationship a song metric has with popularity appeared to change throughout time, based on the trend of the era, which was demonstrated in the data visualization in the report. Additionally, music itself has become more popular in time, or rather, more recent music will have more streams on Spotify by nature of its constituency. The key interactions found from RFE were 
- 'liveness decade_1930s', 'liveness decade_1940s', 'liveness decade_1950s', 'loudness decade_1920s', 'loudness decade_1930s', 'loudness decade_1940s', 'loudness decade_1950s','loudness decade_1960s','loudness decade_1970s',
-'loudness decade_1980s','loudness decade_1990s','loudness decade_2000s', 'loudness decade_2010s', 'loudness decade_2020s', 'tempo decade_1920s', 'tempo decade_1930s', 'tempo decade_1940s', 'tempo decade_1950s', 'tempo decade_1960s', 'tempo decade_1990s', 'tempo decade_2000s', 'tempo decade_2010s', 'tempo decade_2020s', 'valence decade_1920s', 'valence decade_1930s', 'valence decade_1940s', 'valence decade_1950s', 'valence decade_2000s', 'valence decade_2010s'. Below is a plot of X being the predicted popularity by the model and Y being the true popularity. 
+We then created a model using a regression of the 30 most important features found by a recursive feature elimination of interactions between every decade and each song metric. Interactions were used as the relationship a song metric has with popularity appeared to change throughout time, based on the trend of the era, which was demonstrated in the data visualization in the report. Additionally, music itself has become more popular in time, or rather, more recent music will have more streams on Spotify by nature of its constituency.
 
 Interaction Model RMSE score on unseen testing data: 110.30700501688433
 Interaction Model R^2 score on unseen testing data: 0.7650354098138841
+
+Key interactions from RFE and their model coefficients are here:
+loudness: 1.955019764713686
+liveness decade_1930s: -0.7365795509716904
+liveness decade_1940s: -0.8330378819254411
+liveness decade_1950s: -1.1160949945848566
+loudness decade_1920s: 1.653104295372457
+loudness decade_1930s: 1.7785506336976447
+loudness decade_1940s: 2.468405932240749
+loudness decade_1950s: 2.4906150362532293
+loudness decade_1960s: 0.7324174939096625
+loudness decade_1970s: -0.9017162603079788
+loudness decade_1980s: -1.5031282035185953
+loudness decade_1990s: -1.2358471318714634
+loudness decade_2000s: -1.518849246918148
+loudness decade_2010s: -2.76271164629178
+loudness decade_2020s: -0.8417724430242697
+tempo decade_1920s: -1.9963257698227217
+tempo decade_1930s: -2.6059709982508203
+tempo decade_1940s: -3.3781652112909732
+tempo decade_1950s: -2.683114942238923
+tempo decade_1960s: -1.3043675883530166
+tempo decade_1990s: 2.2889791360769687
+tempo decade_2000s: 2.7200342426489135
+tempo decade_2010s: 4.527613081101399
+tempo decade_2020s: 2.2093543680604357
+valence decade_1920s: -1.1716105895566549
+valence decade_1930s: -1.539505935712829
+valence decade_1940s: -2.083877729848254
+valence decade_1950s: -1.0206622976672919
+valence decade_2000s: 1.0991800478138372
+valence decade_2010s: 1.5955956244671379
+
+Below is a plot of X being the predicted popularity by the model and Y being the true popularity. 
+
 
 ```{r}
 
@@ -906,11 +950,17 @@ Thus, we use an Artificial Neural Network with a ReLU final activation function.
 
 #### Key Takeaways from Appendix: Modeling
 
-The Neural Network performs better than the Linear Regression, with its R squared of 0.82 and RMSE of 84.2. The RMSE appears to be high in both the linear regression and neural network due to some especially high residuals that come from the recent 2020s data. 
+The Neural Network performs better than the Linear Regression, with its R squared of 0.82 and RMSE of 84.2. The RMSE appears to be high in both the linear regression and neural network due to some especially high residuals that come from the recent 2020s data. This network, while not fully tuned, is meant to represent an upper bound benchmark for how well we can model popularity with song metrics.
 
-There is a clear performance boost from adding temporal information, which makes sense as many variables even changed sign in terms of their coefficients from earlier decades to later decades in the model, suggesting a shift in its impact on popularity. Additionally, music itself gained in popularity score, which also changes its relationships with other variables. 
+There is a clear performance boost from adding temporal information, which makes sense as many variables even changed sign in terms of their coefficients from earlier decades to later decades in the model, suggesting a shift in its impact on popularity. Additionally, music itself gained in popularity score, which also changes its relationships with other variables. In the simplified regression approach, it seemed as though different relationships between the target and a metric over different decades led to an "averaging" effect over coefficients not allowing any of the relationships to be learned. Thus, this could be benefited by including interaction effects by decade for more nuanced relationships between metrics and popularity scores.
 
 The Neural Network's performing better than the interaction regression shows there is still more left to be desired in the interpretable regression. There may be complex non-linear relationships the network finds, for exmaple, transforms or potentially even more structured change points in the relationships between song metrics and popularity. Further feature engineering and selection should ideally be performed to increase the interpretable model's performance relative to the neural network to eke out as much information as possible on the relationships between metrics and song popularity. More specifically, future work on this project would definitely include change point detection and analysis to further boost the interpretable modeling.
+
+Ultimately, due to a time constraint change point detection was not able to be tested for the model. This may have proved beneficial, as the decade splits created a sparser data set with many features to learn. Finding the change points for each variable in their relations with popularity would have created a model that was more precise in terms of its engineered features, and would have allowed it to better learn the 'eras' of music.
+
+In the model fitting part of our analysis, we had two goals:
+1) Track change in popularity over the months using other variable means through ARIMA (done in earlier section)
+2) Use tempora relationships between metrics (found from prior analysis or feature selection with RFE) to predict popularity at the individual scale rather than the monthly scale. This accounts for nuance of the music in decades. Ultimately, the modeling done demonstrates the validity of many of the metric relationships found earlier in the report as a predictor of not merely monthly song popularity, but individual song popularity. 
 
 #### Key Takeaways from Appendix: Data Cleaning
 
