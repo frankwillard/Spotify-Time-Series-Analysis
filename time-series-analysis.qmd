@@ -758,7 +758,7 @@ forecast::ggCcf(spotify_mean_monthly$popularity_month_mean, model2$residuals)
 ```
 From the residuals of model 2, we can see that there is likely some unaccounted for temporal autocorrelation. In this plot of the CCF of the response variable vs the residuals, we can see a spike at 10, which suggests the use of a lag(10) on the response variable as one of the predictors. For our third model attempt, we will add this predictor to model 2.
 
-```{r}
+```{r warning = false}
 # fit model
 model3 = lm(popularity_month_mean ~ danceability_month_mean + energy_month_mean + explicit_month_mean + 
               instrumentalness_month_mean + loudness_month_mean + tempo_month_mean + 
