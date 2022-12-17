@@ -19,11 +19,13 @@ library(yardstick)
 library(lubridate)
 library(fable)
 library(patchwork)
+library(gt)
 ```
 
 ```{r load-data, message=FALSE, include = FALSE}
 # load data
 spotify_data = read_csv("data/spotify_data.csv")
+theme_set(theme_minimal())
 ```
 
 ## Introduction
@@ -396,6 +398,8 @@ The bivariate EDA (grouped rowwise by behavior), revealed some trends between th
 
 ### Checking cross correlation 
 
+For the final step of our EDA, we checked the cross correlation function and correlation coefficients at lags 0-11 for all predictors. Only tempo resulted in an improvement in correlation coefficient, which is shown below. ALl others either did not show any lagged correlation, or correlation was lower with increased lags. Lagging at month 10 for tempo showed a marked decrease in RMSE, AIC and BIC. 
+
 ```{r, echo=FALSE, results='hide'}
 #lag correlations of energy on popularity 
 spotify_mean_monthly %>%
@@ -567,7 +571,7 @@ spotify_mean_monthly %>%
   summarize(corr = cor(speechiness_month_mean, popularity_month_mean, use="complete.obs"))
 ```
 
-```{r}
+```{r echo = FALSE, warning=FALSE}
 #lag correlations of tempo on popularity 
 spotify_mean_monthly %>%
   select(month, tempo_month_mean, popularity_month_mean) %>%
@@ -587,10 +591,15 @@ spotify_mean_monthly %>%
   select(-tempo_month_mean, -month) %>%
   tidyr::gather(lag, tempo_month_mean, -popularity_month_mean) %>%
   group_by(lag) %>%
-  summarize(corr = cor(tempo_month_mean, popularity_month_mean, use="complete.obs"))
+  summarize(Correlation = cor(tempo_month_mean, popularity_month_mean, use="complete.obs"))%>%
+  arrange(nchar(lag)) %>%
+  gt() %>% tab_options(column_labels.background.color = "#1DB954")
 
 #plot lag CCF
-forecast::ggCcf(spotify_mean_monthly$tempo_month_mean, spotify_mean_monthly$popularity_month_mean)
+forecast::ggCcf(spotify_mean_monthly$tempo_month_mean, 
+                spotify_mean_monthly$popularity_month_mean,
+                main = "CCF plot for tempo lagged on popularity")
+
 ```
 
 ### Fitting preliminary ARIMA model to Popularity scores
@@ -603,7 +612,7 @@ spotify_ts <- xts(spotify_mean_monthly$popularity_month_mean, spotify_mean_month
 spotify_ts <- as.ts(spotify_ts)
 
 # forecast ARIMA
-step1 <- forecast::ggtsdisplay(spotify_ts, points = FALSE)
+step1 <- forecast::ggtsdisplay(spotify_ts, points = FALSE, theme = theme_minimal())
 ```
 
 Based on the time series visualization, we will begin by applying
@@ -667,7 +676,8 @@ step3 %>%
   tidyr::gather(var, popularity_year_mean, -time) %>%
   mutate(var = forcats::as_factor(var)) %>%
   ggplot(aes(x=time, y=popularity_year_mean, color=var)) + 
-    geom_line(alpha=0.75, size=0.8) +
+  geom_line(alpha=0.75, size=0.8) +
+  scale_color_manual(values = c("#191414", "#1DB954"), labels = c("Spotify time series", "Model fit"))+
     labs(title = paste(model, rmse), x = "Time", y = "Average Popularity Score",
          color = "")
 ```
@@ -708,9 +718,10 @@ model1_aic <- AIC(model1)
 # plot predicted values and actual values
 spotify_mean_monthly$predmodel1 = predict(model1)
 ggplot(spotify_mean_monthly, aes(y = popularity_month_mean, x = month, color)) +
-                  geom_line() + 
-  geom_line(aes(y = predmodel1, color ="pink")) + 
-  labs("Predicted vs. Observed, Model 1")
+  geom_line(color = "#191414") + 
+  geom_line(aes(y = predmodel1), color = "#1DB954", alpha = 0.8) + 
+  labs(title = "Predicted (green) vs. Observed (black), Model 1", 
+       x = "Time", y = "Mean popularity")
 ```
 
 The model performed decently, with an root mean squared error or `r round(model1_rmse, 3)` and an AIC of `r round(model1_aic, 3)`. We want to include some temporal component, so we will move forward by adding a temporal component to our existing model with a cross correlation function lag term on the tempo predictor.
@@ -771,10 +782,11 @@ model3_aic <- AIC(model3)
 # plot predicted values and actual values
 model3 %>% 
   broom::augment(newdata = spotify_mean_monthly) %>% 
-  ggplot(aes(y = popularity_month_mean, x = month, color)) +
-  geom_line() +
-  geom_line(aes(y = .fitted, color = "pink")) + 
-  labs("Predicted vs. Observed, Model 3")
+  ggplot(aes(y = popularity_month_mean, x = month)) +
+  geom_line(color = "#191414") + 
+  geom_line(aes(y = .fitted), color ="#1DB954", alpha = 0.9) + 
+  labs(title = "Predicted (green) vs. Observed (black), Model 3",
+       x = "Time", y = "Mean popularity")
 ```
 
 The third model performed even better than the prior two, with an root mean squared error or `r round(model3_rmse, 3)` and an AIC of `r round(model3_aic, 3)`. The temporal components improved the model, but we can include an ARIMA component on the errors instead of the cross correlation terms we added in the second and third models.
@@ -805,10 +817,11 @@ model4_aic <- AIC(model4)
 # visualize predicted versus actual 
 spotify_mean_monthly %>%
   mutate(fitted = model4$fitted) %>% 
-  ggplot(aes(y = popularity_month_mean, x = month, color)) +
-  geom_line() +
-  geom_line(aes(y = fitted, color = "pink")) + 
-  labs("Predicted vs. Observed, Model 4")
+  ggplot(aes(y = popularity_month_mean, x = month)) +
+  geom_line(color = "#191414") + 
+  geom_line(aes(y = fitted), color = "#1DB954") + 
+  labs(title = "Predicted (green) vs. Observed (black), Model 4",
+       x = "Time", y = "Mean popularity")
 ```
 
 The ARIMA model included alongside the multiple linear regression performed the best in terms of AIC, yielding an AIC of `r round(model4_aic, 3)`.
